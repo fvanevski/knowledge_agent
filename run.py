@@ -12,7 +12,7 @@ async def main():
     knowledge_agent = create_knowledge_agent(mcp_tools)
 
     # 3. Define the initial task for the agent
-    initial_task = "Start your workflow. Begin by understanding the existing knowledge base and create a plan."
+    initial_task = "Start your workflow. Begin by understanding the existing lightrag knowledge base by querying it using the lightrag_mcp server and create a plan."
     
     print(f"\n--- Sending initial task to agent ---\nTask: {initial_task}\n")
     
