@@ -2,11 +2,11 @@
 
 import os
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from deepagents import create_deep_agent
 from langchain_openai.chat_models import ChatOpenAI
 from dotenv import load_dotenv
-from sub_agents import get_sub_agents
-
+from sub_agents import get_sub_agent_tools
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain_core.prompts import ChatPromptTemplate
 
 # Load environment variables from .env file
 load_dotenv()
@@ -56,9 +56,6 @@ mcp_server_config = {
 
 async def get_mcp_tools():
     """Initializes the MCP client and fetches the available tools."""
-    # This assumes your lightrag_mcp server is configured in the standard MCP way
-    # We will need to create a simple mcp-config.json for this to work.
-
     mcp_client = MultiServerMCPClient(mcp_server_config)
     tools = await mcp_client.get_tools()
     print(f"Successfully loaded {len(tools)} tools from MCP server.")
@@ -79,33 +76,36 @@ def human_approval(plan: str) -> str:
         return "approved"
     return "denied"
 
-def create_knowledge_agent(tools):
-    """Creates the Knowledge Gardener deep agent."""
+def create_knowledge_agent(mcp_tools):
+    """Creates the Knowledge Gardener agent."""
 
-    # The main instructions for our agent
-    knowledge_agent_instructions = """your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. when you are called, you should first initiate an analyst sub-agent to identify knowledge gaps and stale information in the knowledge base. based on the response from the analyst, you should call a research sub-agent to search the internet for new, relevant sources. based on the response from the researcher, you should call a curator sub-agent to review the new sources and decide what to ingest. once the curator returns the ingestion pipeline status as commplete you should call an auditor sub-agent to review the newly modified knowledge base to identify data quality issues. based on the response from the auditor, you should call a fixer sub-agent to correct any data quality issues identified. once the fixer returns its task status as complete you should call an advisor sub-agent to provide recommendations for systemic improvements. based on the response from the advisor, you should provide a session summary to the user as your response, covering all the actions taken by the various sub-agents and any recommendations provided by the advisor."""
-    # Create the chat model for the agent
-    # Initialize the chat model
+    knowledge_agent_instructions = """Your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. 
+When you are called, you must follow this sequence precisely:
+1.  Call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will return a list of knowledge gaps.
+2.  Take the specific list of gaps from the analyst and provide it as the input to the `researcher_agent`, instructing it to find new sources for those exact topics. The researcher will return a list of URLs.
+3.  Provide the list of URLs from the researcher to the `curator_agent` and instruct it to ingest the content. 
+4.  Once the curator reports that ingestion is complete, you will call the `auditor_agent` to begin its review of the newly modified knowledge base. The auditor will return a report of data quality issues.
+5.  Provide the auditor's report to the `fixer_agent` and instruct it to correct the issues. 
+6.  After the fixer reports that its tasks are complete, you will call the `advisor_agent`, providing it with the reports from both the auditor and the fixer to analyze.
+7.  Finally, based on the report from the advisor, you must provide a session summary to the user as your response, covering all the actions taken by the various sub-agents and any recommendations provided by the advisor."""
+    
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", knowledge_agent_instructions),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ])
+
     model = ChatOpenAI(
         model="openai/gpt-oss-20b",
         base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
     )
 
-    # Get the sub-agents
-    sub_agents = get_sub_agents(model)
+    sub_agent_tools = get_sub_agent_tools(mcp_tools, model)
+    
+    all_tools = sub_agent_tools + [human_approval]
 
-    # Add the human approval tool to the list of tools
-    tools.append(human_approval)
+    agent = create_openai_tools_agent(model, all_tools, prompt)
+    
+    agent_executor = AgentExecutor(agent=agent, tools=all_tools, verbose=True)
 
-    # Create the deep agent instance
-    agent = create_deep_agent(
-        tools=tools,
-        instructions=knowledge_agent_instructions,
-        subagents=sub_agents, 
-        model=model,
-    ).with_config({"recursion_limit": 1000})
-
-    return agent
-
-
-# We will add a main execution block later in run.py
+    return agent_executor

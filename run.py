@@ -12,17 +12,15 @@ async def main():
     knowledge_agent = create_knowledge_agent(mcp_tools)
 
     # 3. Define the initial task for the agent
-    initial_task = "Start your workflow. Begin by understanding the existing lightrag knowledge base by querying it using the lightrag_mcp server and create a plan."
+    initial_task = "Your task is to execute one full run of your maintenance and curation workflow. Begin now."
     
     print(f"\n--- Sending initial task to agent ---\nTask: {initial_task}\n")
     
     # 4. Invoke the agent and stream the response
     async for chunk in knowledge_agent.astream(
-        {"messages": [{"role": "user", "content": initial_task}]},
-        stream_mode="values"
+        {"input": initial_task}
     ):
-        if "messages" in chunk:
-            chunk["messages"][-1].pretty_print()
+        print(chunk)
 
 if __name__ == "__main__":
     asyncio.run(main())
