@@ -11,46 +11,32 @@ from langchain_core.prompts import ChatPromptTemplate
 # Load environment variables from .env file
 load_dotenv()
 
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-GOOGLE_CSE_ID = os.environ.get("GOOGLE_CSE_ID")
-
 mcp_server_config = {
     "google_search": {
         "command": "uv",
-        "args": ["run", "--with", "requests,python-dotenv,pydantic,mcp", "--", "python3", "/workspace/mcp_servers/google_search_mcp/google_search_mcp.py"],
-        "env": {
-            "GOOGLE_API_KEY": GOOGLE_API_KEY,
-            "GOOGLE_CSE_ID": GOOGLE_CSE_ID
-        },
+        "args": ["run", "python", "google_search_mcp.py"],
+        "cwd": "/workspace/mcp_servers/google_search_mcp",
         "transport": "stdio"
     },
     "lightrag": {
         "command": "uv",
-        "args": [
-            "run",
-            "--with",
-            "httpx,python-dotenv,pydantic,mcp,pyyaml",
-            "--",
-            "python3",
-            "/workspace/mcp_servers/lightrag_mcp/lightrag_mcp.py"
-        ],
+        "args": ["run", "python", "lightrag_mcp.py"],
+        "cwd": "/workspace/mcp_servers/lightrag_mcp",
         "transport": "stdio"
     },
     "fetch": {
         "command": "uvx",
-        "args": [
-            "mcp-server-fetch"
-        ],
+        "args": ["mcp-server-fetch"],
         "transport": "stdio"
     },
     "file_tools": {
         "command": "npx",
-        "args": [
-            "-y",
-            "@modelcontextprotocol/server-filesystem",
-            "/workspace/models/filesystem"
-        ],
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace/knowledge_agent", "/workspace/LightRAG"],
         "transport": "stdio"
+    },
+    "deepwiki": {
+        "url": "https://mcp.deepwiki.com/sse",
+        "transport": "sse"
     }
 }
 
@@ -77,16 +63,16 @@ def human_approval(plan: str) -> str:
     return "denied"
 
 def create_knowledge_agent(mcp_tools):
-    """Creates the Knowledge Gardener agent."""
+    """Creates the Knowledge Agent."""
 
     knowledge_agent_instructions = """Your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. 
 When you are called, you must follow this sequence precisely:
 1.  Call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will return a list of knowledge gaps.
-2.  Take the specific list of gaps from the analyst and provide it as the input to the `researcher_agent`, instructing it to find new sources for those exact topics. The researcher will return a list of URLs.
-3.  Provide the list of URLs from the researcher to the `curator_agent` and instruct it to ingest the content. 
+2.  Take the specific list of gaps from the analyst and provide it as the input to the `researcher_agent`, instructing it to find new sources for those exact topics. The researcher will return a list of topics with associated URLs for each topic.
+3.  Provide the list of gaps from the analyst and the list of topics with associated URLs from the researcher to the `curator_agent` and instruct it to review the URLs (by checking their content and relevance to the topic and knowledge gaps), select which ones to ingest, carry out the ingestion, and report task completion.
 4.  Once the curator reports that ingestion is complete, you will call the `auditor_agent` to begin its review of the newly modified knowledge base. The auditor will return a report of data quality issues.
 5.  Provide the auditor's report to the `fixer_agent` and instruct it to correct the issues. 
-6.  After the fixer reports that its tasks are complete, you will call the `advisor_agent`, providing it with the reports from both the auditor and the fixer to analyze.
+6.  After the fixer reports that its tasks are complete, you will call the `advisor_agent`, providing it with the reports from both the auditor and the fixer to analyze. The advisor will return its own report with recommendations for addressing the underlying causes of any identified issues (such as by modifying the ingestion prompts or LightRAG server configuration).
 7.  Finally, based on the report from the advisor, you must provide a session summary to the user as your response, covering all the actions taken by the various sub-agents and any recommendations provided by the advisor."""
     
     prompt = ChatPromptTemplate.from_messages([

@@ -3,8 +3,8 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.tools import Tool
-from langchain_core.pydantic_v1 import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field
+from typing import Dict, List
 
 def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str):
     """Helper function to create a sub-agent."""
@@ -20,7 +20,8 @@ class ResearcherAgentArgs(BaseModel):
     topics: List[str] = Field(description="A list of topics or knowledge gaps to research.")
 
 class CuratorAgentArgs(BaseModel):
-    urls: List[str] = Field(description="A list of URLs to ingest.")
+    topics: List[str] = Field(description="A list of topics or knowledge gaps to research.")
+    urls_by_topic: Dict[str, List[str]] = Field(description="A dictionary of topics and a list of URLs for each topic to consider for ingestion.")
 
 class FixerAgentArgs(BaseModel):
     auditor_report: str = Field(description="The detailed report from the Auditor identifying data quality issues.")
@@ -33,23 +34,23 @@ def get_sub_agent_tools(all_tools: list, model: ChatOpenAI):
     """Initializes and returns a list of all sub-agents as tools."""
 
     # Filter tools for each agent
-    analyst_tools = [t for t in all_tools if t.name in ["query", "graphs_get"]]
+    analyst_tools = [t for t in all_tools if t.name in ["query", "graphs_get", "graph_labels"]]
     researcher_tools = [t for t in all_tools if t.name == "google_search"]
     curator_tools = [t for t in all_tools if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]]
     auditor_tools = [t for t in all_tools if t.name in ["graphs_get", "query"]]
     fixer_tools = [t for t in all_tools if t.name in ["human_approval", "graph_update_entity", "documents_delete_entity", "graph_update_relation", "documents_delete_relation", "graph_entity_exists"]]
-    advisor_tools = [t for t in all_tools if t.name == "read_file"]
+    advisor_tools = [t for t in all_tools if t.name in ["list_allowed_directories", "list_directory", "search_files", "read_text_file", "read_wiki_structure", "read_wiki_contents", "ask_question"]]
 
     # 1. The Analyst Agent Tool
-    analyst_prompt = '''Your goal is to perform a comprehensive analysis of the LightRAG knowledge base and identify high-value knowledge gaps. You must follow this specific workflow:
+    analyst_prompt = '''Your goal is to perform a comprehensive analysis of the LightRAG knowledge base (KB) and identify high-value knowledge gaps. You must follow this specific workflow:
 
 1.  **Step 1: Discover Existing Topics.** Your first action is to get a high-level overview of the knowledge base. Use your `graph_labels` tool to retrieve all existing topic labels. If needed, use the `query` tool with broad queries to understand the main subject matter.
 2.  **Step 2: Create a Thematic Summary.** Take the raw list of topics from Step 1 and synthesize it. Group the topics into 5-10 high-level themes or categories to form a clear picture of what the knowledge base is about.
 3.  **Step 3: Identify Knowledge Gaps.** Based on your thematic summary, critically reason about what is missing. Consider these types of gaps:
-    *   **Temporal Gaps:** Are there topics that are clearly outdated (e.g., policies from 2 years ago, technologies that have been superseded)?
-    *   **Logical Gaps:** Are there missing logical components of a topic (e.g., the KB has 'user authentication' but not 'user authorization')?
-    *   **Comparative Gaps:** Does the KB cover one technology (e.g., 'React') but lack information on its major alternatives (e.g., 'Vue', 'Svelte')?
-4.  **Step 4: Produce a Report.** Consolidate your findings into a structured list of the most important gaps. Each item in the list should clearly state the missing topic. This report will be passed to the Researcher, so it must be clear and actionable.
+    *   **Temporal Gaps:** Are there topics that are clearly outdated (including, but not limited to or requiring, sources dated prior to 1-2 years ago, information that has been superseded, etc.)?
+    *   **Logical/Comparative Gaps:** Are there missing logical or comparative components of a topic (e.g., the KB has 'congressional factors' but not 'judicial factors', or has 'Democrat response' but not 'Republican (aka GOP) response')?
+4.  **Step 4: Produce a Report.** Consolidate your findings into a structured list of the most important gaps. Each item in the list should clearly state the missing topic. This report will be passed to a dedicated Researcher, so it must be clear and actionable.
+5.  **Step 5: Return the Report.** Upon task completion, return the report to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
     analyst_agent = create_sub_agent(model, analyst_tools, analyst_prompt)
@@ -57,11 +58,21 @@ You must base your analysis exclusively on the output of your tools. Do not use 
         name="analyst_agent",
         func=lambda input_str: analyst_agent.invoke({"input": input_str}),
         coroutine=lambda input_str: analyst_agent.ainvoke({"input": input_str}),
-        description="Use this agent to identify knowledge gaps and stale information in the knowledge base. Provide a clear instruction as input."
+        description="Use this agent to identify knowledge gaps and stale information in the LightRAG knowledge base (KB). Provide clear instructions as input."
     )
 
     # 2. The Researcher Agent Tool
-    researcher_prompt = "Your goal is to find new, relevant sources to fill knowledge gaps. You will receive a list of topics from the Orchestrator. For each topic, you are limited to performing a maximum of 3 independent Google searches. From the combined results, you must identify and return no more than the top 5 most relevant URLs to the Orchestrator."
+    researcher_prompt = '''Your goal is to find new, relevant sources to fill knowledge gaps. You will receive a list of topics from the Orchestrator. You must follow this specific workflow:
+
+1.  **Step 1: Establish list of topics.** Review the list of knowledge gaps provided by the Orchestrator and originating from the Analyst Agent and generate a list of specific topics to research using the `google_search` tool.
+2.  **Step 2: Research topics.** For each topic in the list you established, perform a maximum of 4 independent Google searches using the `google_search` tool.
+    *   **Initial general query:** Perform a broad Google search for the topic to get a sense of the landscape of information available. The date restriction contraints can be relaxed somewhat for this initial broad query.
+    *   **Focused queries:** Based on the initial results, perform up to 3 more targeted searches to find specific information related to the topic. Use date restriction, subject matter, and source parameters of the `google_search` tool to filter results as appropriate.
+    *   **Select top results:** From the combined results, you must identify and select no more than the top 5 most relevant URLs for the topic to return to the Orchestrator.
+3.  **Step 3: Produce a report.** Consolidate your findings into a structured report listing each topic researched and the URLs selected for each topic. This report will be passed to a dedicated Curator, so it must be clear and actionable.
+4.  **Step 4: Return the Report.** Upon task completion, return the report to the Orchestrator.
+
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
     researcher_agent = create_sub_agent(model, researcher_tools, researcher_prompt)
     researcher_tool = Tool.from_function(
         name="researcher_agent",
@@ -72,18 +83,31 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     )
 
     # 3. The Curator Agent Tool
-    curator_prompt = '''Your goal is to review and ingest new sources into the LightRAG knowledge base. You will receive a list of URLs from the Orchestrator. For each URL, fetch the content and evaluate its relevance. For sources you approve, use your assigned tools to ingest them via the lightrag_mcp server. You must monitor the ingestion process using the `documents_pipeline_status` tool until it is complete. Finally, report a summary of what was successfully ingested to the Orchestrator.'''
+    curator_prompt = '''Your goal is to review and ingest new sources into the LightRAG knowledge base. You will receive a list of knowledge gaps and select topics with associated URLs from the Orchestrator. You must follow this specific workflow:
+
+1.  **Step 1: Establish list of URLs.** Review the list of topics with associated URLs provided by the Orchestrator and originating from the Researcher Agent and generate a list of URLs to fetch using the `fetch` tool, noting for each URL its associated topic.
+2.  **Step 2: Fetch and evaluate content.** For each URL, fetch the content (all or partial if sufficient to make a determination) using the `fetch` tool and evaluate its relevance in relation to its associated topic and the provided knowledge gaps, making a determination of whether or not to ingest.
+3.  **Step 3: Ingest approved sources.** For sources you approve for ingestion, use your assigned tools to ingest them via the lightrag_mcp server. You must monitor the ingestion process using the `documents_pipeline_status` tool until it is complete.
+4.  **Step 4: Report ingestion results.** Finally, report a summary of what was successfully ingested to the Orchestrator.
+
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
     curator_agent = create_sub_agent(model, curator_tools, curator_prompt)
     curator_tool = Tool.from_function(
         name="curator_agent",
         description="Use this agent to review and ingest new sources from a list of URLs.",
-        func=lambda urls: curator_agent.invoke({"input": f"Ingest the following URLs: {urls}"}),
-        coroutine=lambda urls: curator_agent.ainvoke({"input": f"Ingest the following URLs: {urls}"}),
+        func=lambda topics, topic_urls: curator_agent.invoke({"input": f"Knowledge Gaps:\n{topics}\n\nTopics with associated URLs:\n{topic_urls}"}),
+        coroutine=lambda topics, topic_urls: curator_agent.ainvoke({"input": f"Knowledge Gaps:\n{topics}\n\nTopics with associated URLs:\n{topic_urls}"}),
         args_schema=CuratorAgentArgs
     )
 
     # 4. The Auditor Agent Tool
-    auditor_prompt = "Your goal is to review the LightRAG knowledge base to identify data quality issues. You must use your assigned tools (`graphs_get`, `query`) to scan the graph for duplicate entities, irregular normalization, messy relationships, and label inconsistencies. Your report should be concise and focus on the top 5-10 most critical data quality issues you discover. Produce this detailed report for the Orchestrator."
+    auditor_prompt = '''Your goal is to review the LightRAG knowledge base to identify data quality issues. You must follow this specific workflow:
+
+1.  **Step 1: Identify data quality issues.** Use your assigned lightrag_mcp server tools (`graphs_get`, `query`) to scan the graph for duplicate entities, irregular normalization, messy relationships, and label inconsistencies.
+2.  **Step 2: Generate Report of findings.** Generate a report of your findings. Your report should be concise and focus on the top 5-10 most critical data quality issues you discover.
+3.  **Step 3: Report findings.** Upon task completion, return this detailed report to the Orchestrator.
+
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
     auditor_agent = create_sub_agent(model, auditor_tools, auditor_prompt)
     auditor_tool = Tool(
         name="auditor_agent",
@@ -93,11 +117,16 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     )
 
     # 5. The Fixer Agent Tool
-    fixer_prompt = '''Your goal is to correct data quality issues in the LightRAG knowledge base. You will be given a report of issues from the Auditor. First, create a detailed, step-by-step plan for how you will fix the issues using your assigned lightrag_mcp server tools. Your plan should address a manageable number of issues at a time, containing no more than 10 distinct correction steps. 
+    fixer_prompt = '''Your goal is to correct data quality issues in the LightRAG knowledge base. You will be given a report of issues from the Auditor. You must follow this specific workflow:
 
-Then, you MUST use the `human_approval` tool to get permission to execute your plan. 
+1.  **Step 1: Create Fixing Plan.** First, create a detailed, step-by-step plan for how you will fix the issues using your assigned lightrag_mcp server tools (e.g., `graph_update_entity`, `documents_delete_entity`, `graph_update_relation`, `documents_delete_relation`, `graph_entity_exists`). Your plan should address a manageable number of issues at a time, containing no more than 10 distinct correction steps.
+2.  **Step 2: Get Human Approval.** Next, present your fixing plan to a human reviewer for approval. You must use the `human_approval` tool to facilitate this process.
+    *   **You MUST use the `human_approval` tool to get permission to execute your plan.** Do NOT make any changes until you have received approval.
+3.  **Step 3: Execute Fixing Plan.** Once you have received approval, execute your fixing plan using the assigned lightrag_mcp server tools (e.g., `graph_update_entity`, `documents_delete_entity`, `graph_update_relation`, `documents_delete_relation`, `graph_entity_exists`).
+4.  **Step 4: Report Corrections.** Once all approved changes are made, report a summary of the corrections to the Orchestrator.
 
-Do NOT make any changes until you have received approval. Once all approved changes are made, report a summary of the corrections to the Orchestrator.'''
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
+
     fixer_agent = create_sub_agent(model, fixer_tools, fixer_prompt)
     fixer_tool = Tool.from_function(
         name="fixer_agent",
@@ -108,7 +137,16 @@ Do NOT make any changes until you have received approval. Once all approved chan
     )
 
     # 6. The Advisor Agent Tool
-    advisor_prompt = "Your goal is to provide recommendations for systemic improvements. Review the reports from the Auditor and Fixer to identify recurring error patterns. Based on these patterns, generate specific, actionable recommendations. Provide these recommendations in a clear, final report to the Orchestrator, focusing on the top 3-5 most impactful and actionable suggestions."
+    advisor_prompt = '''Your goal is to provide recommendations for systemic improvements. You will be provided with reports from the Auditor and Fixer to identify recurring error patterns. You must follow this specific workflow:
+
+1.  **Step 1: Analyze Reports.** Carefully review the reports from the Auditor and Fixer to identify key themes and recurring issues.
+2.  **Step 2: Generate Recommendations.** Based on these patterns, generate specific, actionable recommendations. You can read files from the LighRAG knowledge base instance using the `file_read` tool and get up-to-date documentation/answers from the LightRAG github repository (HKUDS/LightRAG) using the `read_wiki_structure`, `read_wiki_contents`, and `ask_question` tools to inform your suggestions.
+    *   **Ingestion Prompts:** Consider how the ingestion prompts contained in the `/workspace/LightRAG/lightrag/prompt.py` file can be revised to better handle node generation, entity naming, avoiding duplicates, establishing useful and relevant relationships, and other relevant aspects.
+    *   **Server Configuration:** Review the server configuration settings (e.g., chunk size, chunk overlap, token limits, etc.) in the `/workspace/LightRAG/.env` file to ensure optimal performance and resource allocation for the LightRAG instance, taking into consideration factors such as use of local models (MXFP4-quantized gpt-oss-20b for the LLM, bge-m3-GGUF/bge-m3-Q6_K.gguf for text embedding, and bge-reranker-v2-m3-GGUF/bge-reranker-v2-m3-Q6_K.gguf for reranking) and GPU resources (Nvidia RTX 3090 with 24GB VRAM).
+3.  **Step 3: Compile Final Report.** Provide these recommendations in a clear, final report, focusing on the top 3-5 most impactful and actionable suggestions.
+4.  **Step 4: Report Recommendations.** Upon task completion, return the final report to the Orchestrator.
+
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
     advisor_agent = create_sub_agent(model, advisor_tools, advisor_prompt)
     advisor_tool = Tool.from_function(
         name="advisor_agent",

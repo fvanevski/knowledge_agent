@@ -1,0 +1,13 @@
+[project]
+name = "knowledge-agent"
+version = "0.1.0"
+description = "AI agent for intelligently updating and maintaining LightRAG knowledge base"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-mcp-adapters",
+    "langchain-openai",
+    "pydantic",
+    "python-dotenv",
+    "langchain",
+]
