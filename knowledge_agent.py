@@ -67,9 +67,9 @@ def create_knowledge_agent(mcp_tools):
 
     knowledge_agent_instructions = """Your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. 
 When you are called, you must follow this sequence precisely:
-1.  Call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will return a list of knowledge gaps.
-2.  Take the specific list of gaps from the analyst and provide it as the input to the `researcher_agent`, instructing it to find new sources for those exact topics. The researcher will return a list of topics with associated URLs for each topic.
-3.  Provide the list of gaps from the analyst and the list of topics with associated URLs from the researcher to the `curator_agent` and instruct it to review the URLs (by checking their content and relevance to the topic and knowledge gaps), select which ones to ingest, carry out the ingestion, and report task completion.
+1.  Call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will return a report on knowledge gaps.
+2.  Take the report from the analyst and provide it as the input to the `researcher_agent`, instructing it to find new sources for those exact topics. The researcher will return a research report with a list of topics (preserving the full context of the knowledge gap) and associated URLs for each topic.
+3.  Provide the research report from the researcher to the `curator_agent` and instruct it to review the URLs, select which ones to ingest, carry out the ingestion, and report task completion.
 4.  Once the curator reports that ingestion is complete, you will call the `auditor_agent` to begin its review of the newly modified knowledge base. The auditor will return a report of data quality issues.
 5.  Provide the auditor's report to the `fixer_agent` and instruct it to correct the issues. 
 6.  After the fixer reports that its tasks are complete, you will call the `advisor_agent`, providing it with the reports from both the auditor and the fixer to analyze. The advisor will return its own report with recommendations for addressing the underlying causes of any identified issues (such as by modifying the ingestion prompts or LightRAG server configuration).

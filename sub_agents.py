@@ -20,8 +20,7 @@ class ResearcherAgentArgs(BaseModel):
     topics: List[str] = Field(description="A list of topics or knowledge gaps to research.")
 
 class CuratorAgentArgs(BaseModel):
-    topics: List[str] = Field(description="A list of topics or knowledge gaps to research.")
-    urls_by_topic: Dict[str, List[str]] = Field(description="A dictionary of topics and a list of URLs for each topic to consider for ingestion.")
+    research_report: Dict[str, List[str]] = Field(description="A dictionary where keys are topics (preserving the full context of the knowledge gap) and values are lists of URLs to consider for ingestion.")
 
 class FixerAgentArgs(BaseModel):
     auditor_report: str = Field(description="The detailed report from the Auditor identifying data quality issues.")
@@ -64,12 +63,12 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     # 2. The Researcher Agent Tool
     researcher_prompt = '''Your goal is to find new, relevant sources to fill knowledge gaps. You will receive a list of topics from the Orchestrator. You must follow this specific workflow:
 
-1.  **Step 1: Establish list of topics.** Review the list of knowledge gaps provided by the Orchestrator and originating from the Analyst Agent and generate a list of specific topics to research using the `google_search` tool.
+1.  **Step 1: Establish list of topics.** Review the list of knowledge gaps provided by the Orchestrator. For each gap, formulate a specific research topic that preserves the full context of the gap. For example, if the gap is "outdated information on Topic A," the research topic should be "updated information on Topic A" or "information on Topic A after <date>."
 2.  **Step 2: Research topics.** For each topic in the list you established, perform a maximum of 4 independent Google searches using the `google_search` tool.
     *   **Initial general query:** Perform a broad Google search for the topic to get a sense of the landscape of information available. The date restriction contraints can be relaxed somewhat for this initial broad query.
     *   **Focused queries:** Based on the initial results, perform up to 3 more targeted searches to find specific information related to the topic. Use date restriction, subject matter, and source parameters of the `google_search` tool to filter results as appropriate.
     *   **Select top results:** From the combined results, you must identify and select no more than the top 5 most relevant URLs for the topic to return to the Orchestrator.
-3.  **Step 3: Produce a report.** Consolidate your findings into a structured report listing each topic researched and the URLs selected for each topic. This report will be passed to a dedicated Curator, so it must be clear and actionable.
+3.  **Step 3: Produce a report.** Consolidate your findings into a structured report as a dictionary where the keys are the context-rich topics you researched and the values are the lists of URLs you selected for each topic. This report will be passed to a dedicated Curator, so it must be clear and actionable.
 4.  **Step 4: Return the Report.** Upon task completion, return the report to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
@@ -83,10 +82,10 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     )
 
     # 3. The Curator Agent Tool
-    curator_prompt = '''Your goal is to review and ingest new sources into the LightRAG knowledge base. You will receive a list of knowledge gaps and select topics with associated URLs from the Orchestrator. You must follow this specific workflow:
+    curator_prompt = '''Your goal is to review and ingest new sources into the LightRAG knowledge base. You will receive a research report from the Orchestrator containing topics and associated URLs. You must follow this specific workflow:
 
-1.  **Step 1: Establish list of URLs.** Review the list of topics with associated URLs provided by the Orchestrator and originating from the Researcher Agent and generate a list of URLs to fetch using the `fetch` tool, noting for each URL its associated topic.
-2.  **Step 2: Fetch and evaluate content.** For each URL, fetch the content (all or partial if sufficient to make a determination) using the `fetch` tool and evaluate its relevance in relation to its associated topic and the provided knowledge gaps, making a determination of whether or not to ingest.
+1.  **Step 1: Establish list of URLs.** Review the research report provided by the Orchestrator. For each topic, generate a list of URLs to fetch using the `fetch` tool, noting for each URL its associated topic.
+2.  **Step 2: Fetch and evaluate content.** For each URL, fetch the content (all or partial if sufficient to make a determination) using the `fetch` tool and evaluate its relevance in relation to its associated topic, making a determination of whether or not to ingest. If you encounter an error (e.g., a 403 Forbidden error) while fetching a URL, you should log the error and the URL that caused it, and then continue to the next URL.
 3.  **Step 3: Ingest approved sources.** For sources you approve for ingestion, use your assigned tools to ingest them via the lightrag_mcp server. You must monitor the ingestion process using the `documents_pipeline_status` tool until it is complete.
 4.  **Step 4: Report ingestion results.** Finally, report a summary of what was successfully ingested to the Orchestrator.
 
@@ -94,9 +93,9 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     curator_agent = create_sub_agent(model, curator_tools, curator_prompt)
     curator_tool = Tool.from_function(
         name="curator_agent",
-        description="Use this agent to review and ingest new sources from a list of URLs.",
-        func=lambda topics, topic_urls: curator_agent.invoke({"input": f"Knowledge Gaps:\n{topics}\n\nTopics with associated URLs:\n{topic_urls}"}),
-        coroutine=lambda topics, topic_urls: curator_agent.ainvoke({"input": f"Knowledge Gaps:\n{topics}\n\nTopics with associated URLs:\n{topic_urls}"}),
+        description="Use this agent to review and ingest new sources from a research report containing topics and URLs.",
+        func=lambda research_report: curator_agent.invoke({"input": f"Research Report:\n{research_report}"}),
+        coroutine=lambda research_report: curator_agent.ainvoke({"input": f"Research Report:\n{research_report}"}),
         args_schema=CuratorAgentArgs
     )
 
