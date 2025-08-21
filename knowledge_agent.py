@@ -5,6 +5,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from deepagents import create_deep_agent
 from langchain_openai.chat_models import ChatOpenAI
 from dotenv import load_dotenv
+from sub_agents import get_sub_agents
 
 
 # Load environment variables from .env file
@@ -63,24 +64,26 @@ async def get_mcp_tools():
     print(f"Successfully loaded {len(tools)} tools from MCP server.")
     return tools
 
+from langchain_core.tools import tool
+
+@tool
+def human_approval(plan: str) -> str:
+    """
+    Asks for human approval for a given plan.
+    The plan is a string that describes the actions to be taken.
+    Returns 'approved' or 'denied'.
+    """
+    print(f"\nPROPOSED PLAN:\n{plan}")
+    response = input("Do you approve this plan? (y/n): ").lower()
+    if response == 'y':
+        return "approved"
+    return "denied"
+
 def create_knowledge_agent(tools):
     """Creates the Knowledge Gardener deep agent."""
 
     # The main instructions for our agent
-    knowledge_agent_instructions = """
-    You are the "Knowledge Agent," an autonomous AI agent responsible for maintaining and curating a knowledge base.
-
-    Your primary goal is to ensure the knowledge graph is accurate, up-to-date, and free of duplicate or poorly formatted information.
-
-    Your workflow is as follows:
-    1.  **Understand:** Start by understanding the current topics in the knowledge base.
-    2.  **Expand:** Search for new, relevant information on the internet.
-    3.  **Ingest:** Add your new findings to the knowledge base.
-    4.  **Curate:** After ingestion, check for duplicate entities or normalization issues and correct them.
-    5.  **Learn:** Based on the mistakes you correct, suggest improvements to the system's extraction prompts.
-
-    Use your `write_todos` tool to plan and track your progress through these steps.
-    """
+    knowledge_agent_instructions = """your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. when you are called, you should first initiate an analyst sub-agent to identify knowledge gaps and stale information in the knowledge base. based on the response from the analyst, you should call a research sub-agent to search the internet for new, relevant sources. based on the response from the researcher, you should call a curator sub-agent to review the new sources and decide what to ingest. once the curator returns the ingestion pipeline status as commplete you should call an auditor sub-agent to review the newly modified knowledge base to identify data quality issues. based on the response from the auditor, you should call a fixer sub-agent to correct any data quality issues identified. once the fixer returns its task status as complete you should call an advisor sub-agent to provide recommendations for systemic improvements. based on the response from the advisor, you should provide a session summary to the user as your response, covering all the actions taken by the various sub-agents and any recommendations provided by the advisor."""
     # Create the chat model for the agent
     # Initialize the chat model
     model = ChatOpenAI(
@@ -88,15 +91,21 @@ def create_knowledge_agent(tools):
         base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
     )
 
+    # Get the sub-agents
+    sub_agents = get_sub_agents(model)
+
+    # Add the human approval tool to the list of tools
+    tools.append(human_approval)
+
     # Create the deep agent instance
     agent = create_deep_agent(
         tools=tools,
         instructions=knowledge_agent_instructions,
-        # We will define sub-agents later
-        subagents=[], 
+        subagents=sub_agents, 
         model=model,
     ).with_config({"recursion_limit": 1000})
 
     return agent
+
 
 # We will add a main execution block later in run.py
