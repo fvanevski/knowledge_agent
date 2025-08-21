@@ -5,16 +5,35 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain.tools import Tool
 from pydantic import BaseModel, Field
 from typing import Dict, List
+import logging
+import asyncio
 
-def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str):
-    """Helper function to create a sub-agent."""
+def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: logging.Logger, agent_name: str):
+    """Helper function to create a sub-agent with structured logging."""
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("human", "{input}"),
         ("placeholder", "{agent_scratchpad}"),
     ])
     agent = create_openai_tools_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools, verbose=True)
+    
+    # Create a child logger for the sub-agent
+    sub_agent_logger = logger.getChild(agent_name)
+
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+    # Wrapper to log inputs and outputs
+    async def logged_ainvoke(input_data):
+        sub_agent_logger.info(f"Invoking agent", extra={'input': input_data, 'agent_name': agent_name})
+        try:
+            result = await agent_executor.ainvoke({"input": input_data})
+            sub_agent_logger.info(f"Agent finished successfully", extra={'output': result, 'agent_name': agent_name})
+            return result
+        except Exception as e:
+            sub_agent_logger.error(f"Agent failed with an exception: {e}", exc_info=True, extra={'agent_name': agent_name})
+            raise
+
+    return logged_ainvoke
 
 class ResearcherAgentArgs(BaseModel):
     topics: List[str] = Field(description="A list of topics or knowledge gaps to research.")
@@ -29,7 +48,7 @@ class AdvisorAgentArgs(BaseModel):
     auditor_report: str = Field(description="The report from the Auditor.")
     fixer_report: str = Field(description="The report from the Fixer.")
 
-def get_sub_agent_tools(all_tools: list, model: ChatOpenAI):
+def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logger):
     """Initializes and returns a list of all sub-agents as tools."""
 
     # Filter tools for each agent
@@ -52,11 +71,11 @@ def get_sub_agent_tools(all_tools: list, model: ChatOpenAI):
 5.  **Step 5: Return the Report.** Upon task completion, return the report to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
-    analyst_agent = create_sub_agent(model, analyst_tools, analyst_prompt)
+    analyst_agent = create_sub_agent(model, analyst_tools, analyst_prompt, logger, 'analyst_agent')
     analyst_tool = Tool(
         name="analyst_agent",
-        func=lambda input_str: analyst_agent.invoke({"input": input_str}),
-        coroutine=lambda input_str: analyst_agent.ainvoke({"input": input_str}),
+        func=lambda input_str: asyncio.run(analyst_agent(input_str)),
+        coroutine=analyst_agent,
         description="Use this agent to identify knowledge gaps and stale information in the LightRAG knowledge base (KB). Provide clear instructions as input."
     )
 
@@ -72,12 +91,12 @@ You must base your analysis exclusively on the output of your tools. Do not use 
 4.  **Step 4: Return the Report.** Upon task completion, return the report to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
-    researcher_agent = create_sub_agent(model, researcher_tools, researcher_prompt)
+    researcher_agent = create_sub_agent(model, researcher_tools, researcher_prompt, logger, 'researcher_agent')
     researcher_tool = Tool.from_function(
         name="researcher_agent",
         description="Use this agent to search the internet for new, relevant sources for a given list of topics.",
-        func=lambda topics: researcher_agent.invoke({"input": f"Research the following topics: {topics}"}),
-        coroutine=lambda topics: researcher_agent.ainvoke({"input": f"Research the following topics: {topics}"}),
+        func=lambda **kwargs: asyncio.run(researcher_agent(kwargs)),
+        coroutine=researcher_agent,
         args_schema=ResearcherAgentArgs
     )
 
@@ -90,12 +109,12 @@ You must base your analysis exclusively on the output of your tools. Do not use 
 4.  **Step 4: Report ingestion results.** Finally, report a summary of what was successfully ingested to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
-    curator_agent = create_sub_agent(model, curator_tools, curator_prompt)
+    curator_agent = create_sub_agent(model, curator_tools, curator_prompt, logger, 'curator_agent')
     curator_tool = Tool.from_function(
         name="curator_agent",
         description="Use this agent to review and ingest new sources from a research report containing topics and URLs.",
-        func=lambda research_report: curator_agent.invoke({"input": f"Research Report:\n{research_report}"}),
-        coroutine=lambda research_report: curator_agent.ainvoke({"input": f"Research Report:\n{research_report}"}),
+        func=lambda **kwargs: asyncio.run(curator_agent(kwargs)),
+        coroutine=curator_agent,
         args_schema=CuratorAgentArgs
     )
 
@@ -107,11 +126,11 @@ You must base your analysis exclusively on the output of your tools. Do not use 
 3.  **Step 3: Report findings.** Upon task completion, return this detailed report to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
-    auditor_agent = create_sub_agent(model, auditor_tools, auditor_prompt)
+    auditor_agent = create_sub_agent(model, auditor_tools, auditor_prompt, logger, 'auditor_agent')
     auditor_tool = Tool(
         name="auditor_agent",
-        func=lambda input_str: auditor_agent.invoke({"input": input_str}),
-        coroutine=lambda input_str: auditor_agent.ainvoke({"input": input_str}),
+        func=lambda input_str: asyncio.run(auditor_agent(input_str)),
+        coroutine=auditor_agent,
         description="Use this agent to review the knowledge base and identify data quality issues. Provide a clear instruction as input."
     )
 
@@ -125,13 +144,12 @@ You must base your analysis exclusively on the output of your tools. Do not use 
 4.  **Step 4: Report Corrections.** Once all approved changes are made, report a summary of the corrections to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
-
-    fixer_agent = create_sub_agent(model, fixer_tools, fixer_prompt)
+    fixer_agent = create_sub_agent(model, fixer_tools, fixer_prompt, logger, 'fixer_agent')
     fixer_tool = Tool.from_function(
         name="fixer_agent",
         description="Use this agent to correct data quality issues based on a report from the Auditor.",
-        func=lambda auditor_report: fixer_agent.invoke({"input": auditor_report}),
-        coroutine=lambda auditor_report: fixer_agent.ainvoke({"input": auditor_report}),
+        func=lambda **kwargs: asyncio.run(fixer_agent(kwargs)),
+        coroutine=fixer_agent,
         args_schema=FixerAgentArgs
     )
 
@@ -146,12 +164,12 @@ You must base your analysis exclusively on the output of your tools. Do not use 
 4.  **Step 4: Report Recommendations.** Upon task completion, return the final report to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
-    advisor_agent = create_sub_agent(model, advisor_tools, advisor_prompt)
+    advisor_agent = create_sub_agent(model, advisor_tools, advisor_prompt, logger, 'advisor_agent')
     advisor_tool = Tool.from_function(
         name="advisor_agent",
         description="Use this agent to provide recommendations for systemic improvements based on reports from the Auditor and Fixer.",
-        func=lambda auditor_report, fixer_report: advisor_agent.invoke({"input": f"Auditor Report:\n{auditor_report}\n\nFixer Report:\n{fixer_report}"}),
-        coroutine=lambda auditor_report, fixer_report: advisor_agent.ainvoke({"input": f"Auditor Report:\n{auditor_report}\n\nFixer Report:\n{fixer_report}"}),
+        func=lambda **kwargs: asyncio.run(advisor_agent(kwargs)),
+        coroutine=advisor_agent,
         args_schema=AdvisorAgentArgs
     )
 

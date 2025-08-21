@@ -3,13 +3,10 @@
 import os
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_openai.chat_models import ChatOpenAI
-from dotenv import load_dotenv
 from sub_agents import get_sub_agent_tools
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
-
-# Load environment variables from .env file
-load_dotenv()
+import logging
 
 mcp_server_config = {
     "google_search": {
@@ -62,7 +59,8 @@ def human_approval(plan: str) -> str:
         return "approved"
     return "denied"
 
-def create_knowledge_agent(mcp_tools):
+def create_knowledge_agent(mcp_tools, logger: logging.Logger):
+
     """Creates the Knowledge Agent."""
 
     knowledge_agent_instructions = """Your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. 
@@ -86,7 +84,7 @@ When you are called, you must follow this sequence precisely:
         base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
     )
 
-    sub_agent_tools = get_sub_agent_tools(mcp_tools, model)
+    sub_agent_tools = get_sub_agent_tools(mcp_tools, model, logger)
     
     all_tools = sub_agent_tools + [human_approval]
 
