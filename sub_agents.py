@@ -42,9 +42,6 @@ def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: l
 
     return logged_ainvoke
 
-class ResearcherAgentArgs(BaseModel):
-    topics: List[str] = Field(description="A list of topics or knowledge gaps to research.")
-
 class CuratorAgentArgs(BaseModel):
     research_report: Dict[str, List[str]] = Field(description="A dictionary where keys are topics (preserving the full context of the knowledge gap) and values are lists of URLs to consider for ingestion.")
 
@@ -57,15 +54,32 @@ class AdvisorAgentArgs(BaseModel):
 
 @tool
 def save_report(report: str, filename: str):
-    """Saves a report to a file in the state directory, appending to a list of entries."""
+    """Saves a report to a file in the state directory, appending to the 'reports' list within a JSON object."""
+    try:
+        new_report_dict = json.loads(report)
+    except json.JSONDecodeError as e:
+        return f"Error: The provided report is not a valid JSON. Please fix the JSON and try again. Details: {e}"
+
     filepath = f"state/{filename}"
-    entries = []
+    
+    # Default structure
+    file_data = {"reports": []}
+    
+    # If file exists and is not empty, load its content
     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         with open(filepath, "r") as f:
-            entries = json.load(f)
-    entries.append(report)
+            file_data = json.load(f)
+            # Ensure the 'reports' key exists and is a list
+            if "reports" not in file_data or not isinstance(file_data["reports"], list):
+                file_data["reports"] = []
+    
+    # Append the new report dictionary to the list
+    file_data["reports"].append(new_report_dict)
+    
+    # Write the updated structure back to the file
     with open(filepath, "w") as f:
-        json.dump(entries, f, indent=4)
+        json.dump(file_data, f, indent=4)
+        
     return f"Successfully saved report to {filename}"
 
 @tool
@@ -75,68 +89,27 @@ def load_report(filename: str) -> str:
     if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
         return "No report found."
     with open(filepath, "r") as f:
-        entries = json.load(f)
-    return entries[-1]
+        data = json.load(f)
+    
+    if "reports" in data and isinstance(data["reports"], list) and data["reports"]:
+        return json.dumps(data["reports"][-1])
+    else:
+        return "No reports found in the file."
 
 def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logger, task: str):
     """Initializes and returns a list of all sub-agents as tools."""
 
     # Filter tools for each agent
     analyst_tools = [t for t in all_tools if t.name in ["query", "graphs_get", "graph_labels"]] + [save_report]
-    researcher_tools = [t for t in all_tools if t.name == "google_search"]
+    researcher_tools = [t for t in all_tools if t.name == "google_search"] + [load_report, save_report]
     curator_tools = [t for t in all_tools if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]]
     auditor_tools = [t for t in all_tools if t.name in ["graphs_get", "query"]]
     fixer_tools = [t for t in all_tools if t.name in ["human_approval", "graph_update_entity", "documents_delete_entity", "graph_update_relation", "documents_delete_relation", "graph_entity_exists"]]
     advisor_tools = [t for t in all_tools if t.name in ["list_allowed_directories", "list_directory", "search_files", "read_text_file", "read_wiki_structure", "read_wiki_contents", "ask_question"]]
 
     # 1. The Analyst Agent Tool
-    analyst_prompt = '''Your goal is to perform a comprehensive analysis of the LightRAG knowledge base (KB), identify high-value knowledge gaps, and generate a structured JSON report.
-
-You must follow this precise workflow:
-
-1.  **Step 1: Discover Existing Topics.** Use your available tools (`query`, `graphs_get`, `graph_labels`) to get a high-level overview of the knowledge base's content and structure.
-
-2.  **Step 2: Generate the Report.** Based on your analysis, you must construct a single JSON object for your report. This JSON object must strictly follow the format below. **Do not return any other text or explanation, only the JSON object.**
-
-    ```json
-    {
-        "report_id": "anl_YYYYMMDD_HHMMSS",
-        "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
-        "knowledge_base_summary": {
-            "summary": "A 2-3 sentence summary of the knowledge base's core themes and coverage.",
-            "themes": [
-                {
-                    "theme_id": "theme_unique_identifier",
-                    "description": "A descriptive name for a high-level theme found in the knowledge base."
-                }
-            ]
-        },
-        "identified_gaps": [
-            {
-                "gap_id": "gap_unique_identifier",
-                "description": "A clear and concise description of a specific knowledge gap (e.g., outdated information, missing context, logical inconsistencies).",
-                "research_topic": "A well-defined research topic that, if investigated, would fill the identified gap. This should be a clear instruction for the Researcher agent."
-            }
-        ]
-    }
-    ```
-
-    **Key field requirements:**
-    *   `report_id`: A unique identifier prefixed with `anl_` followed by the current date and time (e.g., `anl_20250821_100000`).
-    *   `timestamp`: The current UTC timestamp in ISO 8601 format.
-    *   `knowledge_base_summary`: A brief overview of the KB's contents.
-    *   `themes`: A list of 4-5 major themes discovered.
-    *   `identified_gaps`: A list of 3-5 specific, high-value knowledge gaps. For each gap, provide a clear `description` and a targeted `research_topic`.
-
-3.  **Step 3: Save the Report.** Once you have generated the JSON report, you must call the `save_report` tool to save it.
-    *   The `report` argument for the `save_report` tool must be the complete JSON report you generated, passed as a string.
-    *   The `filename` argument must be `'analyst_report.json'`.
-
-4.  **Step 4: Return Final Status.** After successfully saving the report, your final and only output must be a status message confirming the action. The message must be in the format:
-    `Successfully wrote analyst report with ID <report_id> to state/analyst_report.json`
-
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.
-'''
+    with open("prompt_templates/analyst_prompt.txt", "r") as f:
+        analyst_prompt = f.read()
     analyst_agent = create_sub_agent(model, analyst_tools, analyst_prompt, logger, 'analyst_agent')
     analyst_tool = Tool(
         name="analyst_agent",
@@ -146,34 +119,14 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     )
 
     # 2. The Researcher Agent Tool
-    researcher_prompt = '''Your goal is to find new, relevant sources for a given list of research topics. You must follow this specific workflow:
-
-1.  **Step 1: Research Topics.** For each topic you receive, perform up to 4 independent Google searches to find the most relevant URLs.
-2.  **Step 2: Produce a Report.** Consolidate your findings into a dictionary where the keys are the research topics and the values are **a flat list of URL strings**.
-
-        **Example of the correct output format:**
-        ```json
-        {{
-          "topic 1": [
-            "https://example.com/url1",
-            "https://example.com/url2"
-          ],
-          "topic 2": [
-            "https://example.com/url3",
-            "https://example.com/url4"
-          ]
-        }}
-        ```
-3.  **Step 3: Return the Report.** Return the report to the Orchestrator.
-
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.'''
+    with open("prompt_templates/researcher_prompt.txt", "r") as f:
+        researcher_prompt = f.read()
     researcher_agent = create_sub_agent(model, researcher_tools, researcher_prompt, logger, 'researcher_agent')
-    researcher_tool = Tool.from_function(
+    researcher_tool = Tool(
         name="researcher_agent",
-        description="Use this agent to search the internet for new, relevant sources for a given list of topics.",
-        func=lambda **kwargs: asyncio.run(researcher_agent(kwargs)),
+        func=lambda input_str: asyncio.run(researcher_agent(input_str)),
         coroutine=researcher_agent,
-        args_schema=ResearcherAgentArgs
+        description="Use this agent to search the internet for new, relevant sources based on the latest analyst report."
     )
 
     # 3. The Curator Agent Tool

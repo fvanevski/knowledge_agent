@@ -1,6 +1,5 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
 *.py[codz]
 *$py.class
 
@@ -209,3 +208,8 @@ __marimo__/
 
 # trace files
 trace*
+
+# Gemini code assist
+.gemini/
+gemini/
+gemini*
