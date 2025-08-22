@@ -1,0 +1,28 @@
+{
+    "google_search": {
+        "command": "uv",
+        "args": ["run", "python", "google_search_mcp.py"],
+        "cwd": "/workspace/mcp_servers/google_search_mcp",
+        "transport": "stdio"
+    },
+    "lightrag": {
+        "command": "uv",
+        "args": ["run", "python", "lightrag_mcp.py"],
+        "cwd": "/workspace/mcp_servers/lightrag_mcp",
+        "transport": "stdio"
+    },
+    "fetch": {
+        "command": "uvx",
+        "args": ["mcp-server-fetch"],
+        "transport": "stdio"
+    },
+    "file_tools": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace/knowledge_agent", "/workspace/LightRAG"],
+        "transport": "stdio"
+    },
+    "deepwiki": {
+        "url": "https://mcp.deepwiki.com/sse",
+        "transport": "sse"
+    }
+}

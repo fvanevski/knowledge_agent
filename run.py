@@ -4,6 +4,7 @@ import logging
 import json
 from datetime import datetime
 import os
+import argparse
 from knowledge_agent import get_mcp_tools, create_knowledge_agent
 
 # Create a logs directory if it doesn't exist
@@ -36,25 +37,53 @@ logger.addHandler(handler)
 
 
 async def main():
-    logger.info("Initializing Knowledge Agent...")
+    parser = argparse.ArgumentParser(description="Run the Knowledge Agent with a specific workflow.")
+    parser.add_argument("--maintenance", action="store_true", help="Run the full maintenance workflow.")
+    parser.add_argument("--analyze", action="store_true", help="Run the analysis workflow.")
+    parser.add_argument("--research", action="store_true", help="Run the research workflow.")
+    parser.add_argument("--curate", action="store_true", help="Run the curation workflow.")
+    parser.add_argument("--audit", action="store_true", help="Run the audit workflow.")
+    parser.add_argument("--fix", action="store_true", help="Run the fix workflow.")
+    parser.add_argument("--advise", action="store_true", help="Run the advise workflow.")
 
-    # 1. Fetch the tools from your running MCP server
-    mcp_tools = await get_mcp_tools()
+    args = parser.parse_args()
 
-    # 2. Create the agent with the loaded tools
-    knowledge_agent = create_knowledge_agent(mcp_tools, logger)
+    task = "maintenance"  # Default task
+    if args.analyze:
+        task = "analyze"
+    elif args.research:
+        task = "research"
+    elif args.curate:
+        task = "curate"
+    elif args.audit:
+        task = "audit"
+    elif args.fix:
+        task = "fix"
+    elif args.advise:
+        task = "advise"
 
-    # 3. Define the initial task for the agent
-    initial_task = "Your task is to execute one full run of your maintenance and curation workflow. Begin now."
+    logger.info(f"Initializing Knowledge Agent for task: {task}...")
 
-    logger.info(f"--- Sending initial task to agent ---", extra={'input': initial_task})
+    try:
+        # 1. Fetch the tools from your running MCP server
+        mcp_tools = await get_mcp_tools()
 
-    # 4. Invoke the agent and stream the response
-    async for chunk in knowledge_agent.astream(
-        {"input": initial_task}
-    ):
-        # The agent's output will be logged by the agent itself
-        pass
+        # 2. Create the agent with the loaded tools
+        knowledge_agent = create_knowledge_agent(mcp_tools, logger, task)
+
+        # 3. Define the initial task for the agent
+        initial_task = f"Your task is to execute the {task} workflow. Begin now."
+
+        logger.info(f"--- Sending initial task to agent ---", extra={'input': initial_task})
+
+        # 4. Invoke the agent and stream the response
+        async for chunk in knowledge_agent.astream(
+            {"input": initial_task}
+        ):
+            # The agent's output will be logged by the agent itself
+            pass
+    finally:
+        logging.shutdown()
 
 if __name__ == "__main__":
     asyncio.run(main())

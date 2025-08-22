@@ -3,10 +3,13 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.tools import Tool
+from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from typing import Dict, List
 import logging
 import asyncio
+import json
+import os
 
 def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: logging.Logger, agent_name: str):
     """Helper function to create a sub-agent with structured logging."""
@@ -24,7 +27,7 @@ def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: l
 
     # Wrapper to log inputs and outputs
     async def logged_ainvoke(input_data):
-        sub_agent_logger.info(f"Invoking agent", extra={'input': input_data, 'agent_name': agent_name})
+        sub_agent_logger.info(f"Invoking agent", extra={'input': json.dumps(input_data), 'agent_name': agent_name})
         try:
             result = await agent_executor.ainvoke({"input": input_data})
             sub_agent_logger.info(f"Agent finished successfully", extra={'output': result, 'agent_name': agent_name})
@@ -48,7 +51,30 @@ class AdvisorAgentArgs(BaseModel):
     auditor_report: str = Field(description="The report from the Auditor.")
     fixer_report: str = Field(description="The report from the Fixer.")
 
-def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logger):
+@tool
+def save_report(report: str, filename: str):
+    """Saves a report to a file in the state directory, appending to a list of entries."""
+    filepath = f"state/{filename}"
+    entries = []
+    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+        with open(filepath, "r") as f:
+            entries = json.load(f)
+    entries.append(report)
+    with open(filepath, "w") as f:
+        json.dump(entries, f, indent=4)
+    return f"Successfully saved report to {filename}"
+
+@tool
+def load_report(filename: str) -> str:
+    """Loads the most recent report from a file in the state directory."""
+    filepath = f"state/{filename}"
+    if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+        return "No report found."
+    with open(filepath, "r") as f:
+        entries = json.load(f)
+    return entries[-1]
+
+def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logger, task: str):
     """Initializes and returns a list of all sub-agents as tools."""
 
     # Filter tools for each agent
@@ -62,15 +88,14 @@ def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logg
     # 1. The Analyst Agent Tool
     analyst_prompt = '''Your goal is to perform a comprehensive analysis of the LightRAG knowledge base (KB) and identify high-value knowledge gaps. You must follow this specific workflow:
 
-1.  **Step 1: Discover Existing Topics.** Your first action is to get a high-level overview of the knowledge base. Use your `graph_labels` tool to retrieve all existing topic labels. If needed, use the `query` tool with broad queries to understand the main subject matter.
-2.  **Step 2: Create a Thematic Summary.** Take the raw list of topics from Step 1 and synthesize it. Group the topics into 5-10 high-level themes or categories to form a clear picture of what the knowledge base is about.
-3.  **Step 3: Identify Knowledge Gaps.** Based on your thematic summary, critically reason about what is missing. Consider these types of gaps:
-    *   **Temporal Gaps:** Are there topics that are clearly outdated (including, but not limited to or requiring, sources dated prior to 1-2 years ago, information that has been superseded, etc.)?
-    *   **Logical/Comparative Gaps:** Are there missing logical or comparative components of a topic (e.g., the KB has 'congressional factors' but not 'judicial factors', or has 'Democrat response' but not 'Republican (aka GOP) response')?
-4.  **Step 4: Produce a Report.** Consolidate your findings into a structured list of the most important gaps. Each item in the list should clearly state the missing topic. This report will be passed to a dedicated Researcher, so it must be clear and actionable.
-5.  **Step 5: Return the Report.** Upon task completion, return the report to the Orchestrator.
+1.  **Step 1: Discover Existing Topics.** Use your available tools to get a high-level overview of the knowledge base.
+2.  **Step 2: Create a Thematic Summary.** Synthesize the topics into 5-10 high-level themes.
+3.  **Step 3: Identify Knowledge Gaps.** Based on your summary, identify temporal or logical gaps.
+4.  **Step 4: Formulate Research Topics.** For each gap, formulate a specific, context-rich research topic. For example, if a gap is "outdated information on Topic A," the research topic should be "updated information on Topic A after <date>."
+5.  **Step 5: Produce a Report.** Consolidate your findings into a structured list of research topics to be passed to the Researcher.
+6.  **Step 6: Return the Report.** Return the report to the Orchestrator.
 
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.'''
     analyst_agent = create_sub_agent(model, analyst_tools, analyst_prompt, logger, 'analyst_agent')
     analyst_tool = Tool(
         name="analyst_agent",
@@ -80,17 +105,13 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     )
 
     # 2. The Researcher Agent Tool
-    researcher_prompt = '''Your goal is to find new, relevant sources to fill knowledge gaps. You will receive a list of topics from the Orchestrator. You must follow this specific workflow:
+    researcher_prompt = '''Your goal is to find new, relevant sources for a given list of research topics. You must follow this specific workflow:
 
-1.  **Step 1: Establish list of topics.** Review the list of knowledge gaps provided by the Orchestrator. For each gap, formulate a specific research topic that preserves the full context of the gap. For example, if the gap is "outdated information on Topic A," the research topic should be "updated information on Topic A" or "information on Topic A after <date>."
-2.  **Step 2: Research topics.** For each topic in the list you established, perform a maximum of 4 independent Google searches using the `google_search` tool.
-    *   **Initial general query:** Perform a broad Google search for the topic to get a sense of the landscape of information available. The date restriction contraints can be relaxed somewhat for this initial broad query.
-    *   **Focused queries:** Based on the initial results, perform up to 3 more targeted searches to find specific information related to the topic. Use date restriction, subject matter, and source parameters of the `google_search` tool to filter results as appropriate.
-    *   **Select top results:** From the combined results, you must identify and select no more than the top 5 most relevant URLs for the topic to return to the Orchestrator.
-3.  **Step 3: Produce a report.** Consolidate your findings into a structured report as a dictionary where the keys are the context-rich topics you researched and the values are the lists of URLs you selected for each topic. This report will be passed to a dedicated Curator, so it must be clear and actionable.
-4.  **Step 4: Return the Report.** Upon task completion, return the report to the Orchestrator.
+1.  **Step 1: Research Topics.** For each topic you receive, perform up to 4 independent Google searches to find the most relevant URLs.
+2.  **Step 2: Produce a Report.** Consolidate your findings into a dictionary where the keys are the research topics and the values are the lists of URLs you found.
+3.  **Step 3: Return the Report.** Return the report to the Orchestrator.
 
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.'''
     researcher_agent = create_sub_agent(model, researcher_tools, researcher_prompt, logger, 'researcher_agent')
     researcher_tool = Tool.from_function(
         name="researcher_agent",
@@ -135,15 +156,15 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     )
 
     # 5. The Fixer Agent Tool
-    fixer_prompt = '''Your goal is to correct data quality issues in the LightRAG knowledge base. You will be given a report of issues from the Auditor. You must follow this specific workflow:
+    fixer_prompt = '''Your goal is to correct data quality issues based on a report from the Auditor. You must follow this specific workflow:
 
-1.  **Step 1: Create Fixing Plan.** First, create a detailed, step-by-step plan for how you will fix the issues using your assigned lightrag_mcp server tools (e.g., `graph_update_entity`, `documents_delete_entity`, `graph_update_relation`, `documents_delete_relation`, `graph_entity_exists`). Your plan should address a manageable number of issues at a time, containing no more than 10 distinct correction steps.
-2.  **Step 2: Get Human Approval.** Next, present your fixing plan to a human reviewer for approval. You must use the `human_approval` tool to facilitate this process.
-    *   **You MUST use the `human_approval` tool to get permission to execute your plan.** Do NOT make any changes until you have received approval.
-3.  **Step 3: Execute Fixing Plan.** Once you have received approval, execute your fixing plan using the assigned lightrag_mcp server tools (e.g., `graph_update_entity`, `documents_delete_entity`, `graph_update_relation`, `documents_delete_relation`, `graph_entity_exists`).
-4.  **Step 4: Report Corrections.** Once all approved changes are made, report a summary of the corrections to the Orchestrator.
+1.  **Step 1: Analyze the Auditor's Report.** If the report indicates no issues were found, your task is complete. Return a message to the Orchestrator stating that no actions were taken.
+2.  **Step 2: Create a Fixing Plan.** If the report identifies issues, create a detailed, step-by-step plan to correct them using your available tools.
+3.  **Step 3: Get Human Approval.** Present your plan to a human for approval using the `human_approval` tool.
+4.  **Step 4: Execute the Plan.** Once approved, execute the plan.
+5.  **Step 5: Report Corrections.** Report a summary of the corrections to the Orchestrator.
 
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.'''
     fixer_agent = create_sub_agent(model, fixer_tools, fixer_prompt, logger, 'fixer_agent')
     fixer_tool = Tool.from_function(
         name="fixer_agent",
@@ -173,4 +194,19 @@ You must base your analysis exclusively on the output of your tools. Do not use 
         args_schema=AdvisorAgentArgs
     )
 
-    return [analyst_tool, researcher_tool, curator_tool, auditor_tool, fixer_tool, advisor_tool]
+    if task == "maintenance":
+        return [analyst_tool, researcher_tool, curator_tool, auditor_tool, fixer_tool, advisor_tool, save_report, load_report]
+    elif task == "analyze":
+        return [analyst_tool, save_report]
+    elif task == "research":
+        return [researcher_tool, load_report, save_report]
+    elif task == "curate":
+        return [curator_tool, load_report]
+    elif task == "audit":
+        return [auditor_tool, save_report]
+    elif task == "fix":
+        return [fixer_tool, load_report, save_report]
+    elif task == "advise":
+        return [advisor_tool, load_report]
+    else:
+        return []
