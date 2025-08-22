@@ -82,7 +82,7 @@ def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logg
     """Initializes and returns a list of all sub-agents as tools."""
 
     # Filter tools for each agent
-    analyst_tools = [t for t in all_tools if t.name in ["query", "graphs_get", "graph_labels"]]
+    analyst_tools = [t for t in all_tools if t.name in ["query", "graphs_get", "graph_labels"]] + [save_report]
     researcher_tools = [t for t in all_tools if t.name == "google_search"]
     curator_tools = [t for t in all_tools if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]]
     auditor_tools = [t for t in all_tools if t.name in ["graphs_get", "query"]]
@@ -90,16 +90,53 @@ def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logg
     advisor_tools = [t for t in all_tools if t.name in ["list_allowed_directories", "list_directory", "search_files", "read_text_file", "read_wiki_structure", "read_wiki_contents", "ask_question"]]
 
     # 1. The Analyst Agent Tool
-    analyst_prompt = '''Your goal is to perform a comprehensive analysis of the LightRAG knowledge base (KB) and identify high-value knowledge gaps. You must follow this specific workflow:
+    analyst_prompt = '''Your goal is to perform a comprehensive analysis of the LightRAG knowledge base (KB), identify high-value knowledge gaps, and generate a structured JSON report.
 
-1.  **Step 1: Discover Existing Topics.** Use your available tools to get a high-level overview of the knowledge base.
-2.  **Step 2: Create a Thematic Summary.** Synthesize the topics into 5-10 high-level themes.
-3.  **Step 3: Identify Knowledge Gaps.** Based on your summary, identify temporal or logical gaps.
-4.  **Step 4: Formulate Research Topics.** For each gap, formulate a specific, context-rich research topic. For example, if a gap is "outdated information on Topic A," the research topic should be "updated information on Topic A after <date>."
-5.  **Step 5: Produce a Report.** Consolidate your findings into a structured list of research topics to be passed to the Researcher.
-6.  **Step 6: Return the Report.** Return the report to the Orchestrator.
+You must follow this precise workflow:
 
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.'''
+1.  **Step 1: Discover Existing Topics.** Use your available tools (`query`, `graphs_get`, `graph_labels`) to get a high-level overview of the knowledge base's content and structure.
+
+2.  **Step 2: Generate the Report.** Based on your analysis, you must construct a single JSON object for your report. This JSON object must strictly follow the format below. **Do not return any other text or explanation, only the JSON object.**
+
+    ```json
+    {
+        "report_id": "anl_YYYYMMDD_HHMMSS",
+        "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
+        "knowledge_base_summary": {
+            "summary": "A 2-3 sentence summary of the knowledge base's core themes and coverage.",
+            "themes": [
+                {
+                    "theme_id": "theme_unique_identifier",
+                    "description": "A descriptive name for a high-level theme found in the knowledge base."
+                }
+            ]
+        },
+        "identified_gaps": [
+            {
+                "gap_id": "gap_unique_identifier",
+                "description": "A clear and concise description of a specific knowledge gap (e.g., outdated information, missing context, logical inconsistencies).",
+                "research_topic": "A well-defined research topic that, if investigated, would fill the identified gap. This should be a clear instruction for the Researcher agent."
+            }
+        ]
+    }
+    ```
+
+    **Key field requirements:**
+    *   `report_id`: A unique identifier prefixed with `anl_` followed by the current date and time (e.g., `anl_20250821_100000`).
+    *   `timestamp`: The current UTC timestamp in ISO 8601 format.
+    *   `knowledge_base_summary`: A brief overview of the KB's contents.
+    *   `themes`: A list of 4-5 major themes discovered.
+    *   `identified_gaps`: A list of 3-5 specific, high-value knowledge gaps. For each gap, provide a clear `description` and a targeted `research_topic`.
+
+3.  **Step 3: Save the Report.** Once you have generated the JSON report, you must call the `save_report` tool to save it.
+    *   The `report` argument for the `save_report` tool must be the complete JSON report you generated, passed as a string.
+    *   The `filename` argument must be `'analyst_report.json'`.
+
+4.  **Step 4: Return Final Status.** After successfully saving the report, your final and only output must be a status message confirming the action. The message must be in the format:
+    `Successfully wrote analyst report with ID <report_id> to state/analyst_report.json`
+
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.
+'''
     analyst_agent = create_sub_agent(model, analyst_tools, analyst_prompt, logger, 'analyst_agent')
     analyst_tool = Tool(
         name="analyst_agent",

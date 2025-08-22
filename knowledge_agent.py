@@ -39,18 +39,18 @@ def create_knowledge_agent(mcp_tools, logger: logging.Logger, task: str):
     """Creates the Knowledge Agent."""
 
     knowledge_agent_instructions = {
-        "maintenance": """Your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. You must handle errors gracefully.
+        "maintenance": '''Your task is to coordinate a group of sub-agents to maintain a lightrag knowledge base periodically. You must handle errors gracefully.
 
 When you are called, you must follow this sequence precisely:
-1.  Call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will return a report on knowledge gaps. Save this report to `analyst_report.json`.
-2.  Take the report from the analyst and provide it as the input to the `researcher_agent`, instructing it to find new sources for those exact topics. The researcher will return a research report with a list of topics (preserving the full context of the knowledge gap) and associated URLs for each topic. Save this report to `researcher_report.json`.
+1.  Call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will save its report to `state/analyst_report.json` and return a status update.
+2.  Call the `researcher_agent` with the status update for the latest report from the `analyst_agent`, instructing it to find new sources to fill the gaps identified in the analyst's report. The researcher will return a research report. Save this report to `researcher_report.json`.
 3.  Provide the research report from the researcher to the `curator_agent` and instruct it to review the URLs, select which ones to ingest, carry out the ingestion, and report task completion.
     *   **If the `curator_agent` returns an error,** analyze the error. If it is a single URL that is failing, remove that URL from the research report and call the `curator_agent` again with the modified report. If the `curator_agent` fails repeatedly, you should stop the workflow and report the error.
 4.  Once the curator reports that ingestion is complete, you will call the `auditor_agent` to begin its review of the newly modified knowledge base. The auditor will return a report of data quality issues. Save this report to `auditor_report.json`.
 5.  Provide the auditor's report to the `fixer_agent` and instruct it to correct the issues. Save the fixer's report to `fixer_report.json`.
 6.  After the fixer reports that its tasks are complete, you will call the `advisor_agent`, providing it with the reports from both the auditor and the fixer to analyze. The advisor will return its own report with recommendations for addressing the underlying causes of any identified issues (such as by modifying the ingestion prompts or LightRAG server configuration).
-7.  Finally, based on the report from the advisor, you must provide a session summary to the user as your response, covering all the actions taken by the various sub-agents and any recommendations provided by the advisor.""",
-        "analyze": "Your task is to call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will return a report on knowledge gaps. You should then save the report to a file named `analyst_report.json` in the `state` directory.",
+7.  Finally, based on the report from the advisor, you must provide a session summary to the user as your response, covering all the actions taken by the various sub-agents and any recommendations provided by the advisor.''',
+        "analyze": "Your task is to call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will save its report to `state/analyst_report.json` and return a status update.",
         "research": "Your task is to read the `analyst_report.json` file from the `state` directory, then call the `researcher_agent` with the list of topics from the report. You should then save the researcher's report to a file named `researcher_report.json` in the `state` directory.",
         "curate": "Your task is to read the `researcher_report.json` file from the `state` directory, then call the `curator_agent` with the research report.",
         "audit": "Your task is to call the `auditor_agent` to review the knowledge base for data quality issues. You should then save the auditor's report to a file named `auditor_report.json` in the `state` directory.",
