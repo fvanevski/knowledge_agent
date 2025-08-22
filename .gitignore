@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*.pyc
 *.py[codz]
 *$py.class
 
@@ -208,4 +209,3 @@ __marimo__/
 
 # trace files
 trace*
-__pycache__/knowledge_agent.cpython-312.pyc

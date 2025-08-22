@@ -1,4 +1,143 @@
-[
-    "{\"Status and impact of U.S. federal DEI policy after the 2025 Executive Order on Ending Illegal Discrimination: a 2026\u20112027 update.\": [\"https://www.whitehouse.gov/presidential-actions/2025/01/ending-radical-indoctrination-in-k-12-schooling/\",\"https://www.fosterswift.com/newsroom/publications/deia-executive-orders-consequences-educational-colleges-universities\",\"https://www.wiley.law/alert-Impacts-of-New-DEI-Executive-Order-Extend-Beyond-Federal-Government-to-Private-Sector\",\"https://www.laborandemploymentlawinsights.com/2025/06/executive-agencies-confirm-demise-of-ofccp-and-identify-private-sector-enforcement-targets/\",\"https://www.srz.com/en/news_and_insights/alerts/president-trump-issues-executive-order-targeting-dei-programs-and-ensuing-legal-developments\"],\"Economic outcomes of the 2025 U.S. tax changes through FY\u202f2027: sectoral impacts, deficit projections, and inequality trends.\": [\"https://www.cbo.gov/publication/61172\",\"https://www.gao.gov/americas-fiscal-future\",\"https://bipartisanpolicy.org/explainer/the-2025-tax-debate-the-corporate-tax-rate-and-pass-through-deduction/\",\"https://obr.uk/economic-and-fiscal-outlooks/\",\"https://www.sandiego.gov/sites/default/files/2023-11/fy2025-2029-five-year-financial-outlook-and-attachments-general-fund.pdf\"],\"Immigration law and enforcement developments in the United States, 2025\u20112028: legislative trends, asylum policy shifts, and border security outcomes.\": [\"https://immigrationforum.org/article/the-first-100-days-of-the-second-trump-administration-key-immigration-related-actions-and-developments/\",\"https://www.kff.org/racial-equity-and-health-policy/expected-immigration-policies-under-a-second-trump-administration-and-their-health-and-economic-implications/\",\"https://www.brookings.edu/articles/tracking-regulatory-changes-in-the-second-trump-administration/\",\"https://www.whitehouse.gov/wp-content/uploads/2024/03/budget_fy2025.pdf\"],\"U.S. electoral integrity and democratic resilience: 2025\u20132028 developments, including court rulings, state election reforms, and misinformation mitigation.\": [\"https://www.electoralintegrityproject.com/eip-blog\",\"https://www.americanprogress.org/article/8-ways-to-protect-american-democracy/\"]}",
-    "{\"Updated Impact Assessment of Trump\u2011Era DEI Executive Orders on Private Sector Hiring Practices (2025\u20132026)\": [\"https://www.brookings.edu/articles/tracking-regulatory-changes-in-the-second-trump-administration/\",\"https://www.morganlewis.com/pubs/2025/01/executive-orders-target-dei-programs-and-gender-protections\"],\"Fiscal Consequences of the 2025 Tax Cuts: Updated Macro\u2011Economic Modeling (2025\u20132026)\": [\"https://bipartisanpolicy.org/explainer/paying-the-2025-tax-bill-income-tax-rates-and-thresholds/\",\"https://taxpolicycenter.org/taxvox/2025-budget-reconciliation-act-will-increase-debt-while-modestly-boosting-economy\"],\"AI Governance in 2025: Legislative Developments, Court Cases, and Industry Self\u2011Regulation\": [\"https://www.ncsl.org/technology-and-communication/artificial-intelligence-2025-legislation\",\"https://www.whitecase.com/insight-our-thinking/ai-watch-global-regulatory-tracker-united-kingdom\"],\"Progress Toward Net\u2011Zero Targets in the United States (2023\u20132026)\": [\"https://climateactiontracker.org/countries/usa/\",\"https://www.wri.org/insights/biden-administration-tracking-climate-action-progress\"],\"Post\u2011Pandemic Federal Workplace Health Policies: Vaccination Mandates and Testing Requirements (2024\u20132025)\": [\"https://www.dir.ca.gov/dosh/coronavirus/\",\"https://www.cdc.gov/covid/hcp/infection-control/guidance-risk-assesment-hcp.html\"],\"V\u2011Dem Democratic Backsliding Metrics for Global Regions (2019\u20132025)\": [\"https://v-dem.net/\",\"https://v-dem.net/data/the-v-dem-dataset/\"],\"Biden Administration Immigration Policy Reforms: Asylum Processing and DACA Updates (2024\u20132025)\": [\"https://www.uscis.gov/DACA\",\"https://www.uscis.gov/newsroom/news-releases\"],\"Efficacy of Fact\u2011Checking Initiatives Post\u20112025 Election Cycle\": [\"https://carnegieendowment.org/research/2024/01/countering-disinformation-effectively-an-evidence-based-policy-guide?lang=en\",\"https://misinforeview.hks.harvard.edu/article/fact-checking-fact-checkers-a-data-driven-approach/\"],\"Labor Union Membership Trends and Legislative Responses (2019\u20132025)\": [\"https://www.epi.org/publication/union-membership-data/\",\"https://www.nlrb.gov/guidance/key-reference-materials/national-labor-relations-act\"],\"Climate Policy Impact on Public Health Outcomes in the U.S. (2023\u20132026)\": [\"https://www.epa.gov/healthresearch/cumulative-impacts-research\",\"https://aspr.hhs.gov/NHSS/National-Health-Security-Strategy-2023-2026/Documents/nhss-2023-2026-508.pdf\"]}"
-]
+{
+    "reports": [
+        {
+            "report_id": "rep_20250821_120000",
+            "timestamp": "2025-08-21T12:00:00Z",
+            "gaps": [
+                {
+                    "gap_id": "gap_midterm_2026_finance",
+                    "description": "Missing information about 2026 U.S. midterm elections",
+                    "searches": [
+                        {
+                            "search_id": "search_midterm_finance_01",
+                            "rationale": "Broad search targeting reputable sources on U.S. elections and campaign finance.",
+                            "parameters": {
+                                "query": "2026 U.S. Midterm Elections: Candidate Landscape, Campaign Finance Trends, and Legislative Priorities",
+                                "daterestrict": "6m",
+                                "safe": "off",
+                                "siteSearch": "rollcall.com OR fec.gov OR campaignlegal.org OR pillsburylaw.com",
+                                "siteSearchFilter": "i",
+                                "sort": "metatags-pubdate:d"
+                            },
+                            "results": [
+                                {
+                                    "url": "https://rollcall.com/2025/01/07/the-2026-midterm-elections-are-just-around-the-corner/",
+                                    "title": "The 2026 Midterm Elections Are Just Around the Corner",
+                                    "snippet": "As the 2026 midterm elections approach, candidates are gearing up for what promises to be a highly competitive race.",
+                                    "pagemap": {
+                                        "metatags": [
+                                            {
+                                                "og:title": "The 2026 Midterm Elections Are Just Around the Corner",
+                                                "og:description": "As the 2026 midterm elections approach, candidates are gearing up for what promises to be a highly competitive race."
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "url": "https://www.fec.gov/resources/cms-content/documents/fy25-fec-congressional-budget-justification.pdf",
+                                    "title": "FEC Congressional Budget Justification FY 2025",
+                                    "snippet": "The Federal Election Commission's budget justification for the fiscal year 2025.",
+                                    "pagemap": {
+                                        "metatags": [
+                                            {
+                                                "og:title": "FEC Congressional Budget Justification FY 2025",
+                                                "og:description": "The Federal Election Commission's budget justification for the fiscal year 2025."
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "search_id": "search_midterm_finance_02",
+                            "rationale": "Focused search on the impact of recent legal decisions on campaign finance.",
+                            "parameters": {
+                                "query": "Impact of Citizens United on 2026 Midterm Election Fundraising",
+                                "daterestrict": "y1",
+                                "safe": "off",
+                                "siteSearch": "campaignlegal.org OR brennancenter.org",
+                                "siteSearchFilter": "i",
+                                "sort": "date"
+                            },
+                            "results": [
+                                {
+                                    "url": "https://campaignlegal.org/update/how-does-citizens-united-decision-still-affect-us-2025",
+                                    "title": "How Does the Citizens United Decision Still Affect Us?",
+                                    "snippet": "An analysis of the ongoing impact of the Citizens United decision on campaign finance.",
+                                    "pagemap": {
+                                        "metatags": [
+                                            {
+                                                "og:title": "How Does the Citizens United Decision Still Affect Us?",
+                                                "og:description": "An analysis of the ongoing impact of the Citizens United decision on campaign finance."
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "gap_id": "gap_doge_status_2025",
+                    "description": "Outdated status of the Department of Government Efficiency (DOGE) since January 2025",
+                    "searches": [
+                        {
+                            "search_id": "search_doge_status_01",
+                            "rationale": "Targeted search for official government memos and updates regarding DOGE.",
+                            "parameters": {
+                                "query": "\"Department of Government Efficiency\" memos 2025",
+                                "daterestrict": "9m",
+                                "safe": "off",
+                                "siteSearch": "opm.gov OR whitehouse.gov",
+                                "siteSearchFilter": "i",
+                                "sort": "metatags-pubdate:d"
+                            },
+                            "results": [
+                                {
+                                    "url": "https://www.opm.gov/policy-data-oversight/latest-memos",
+                                    "title": "Department of Government Efficiency (DOGE) Update 2025",
+                                    "snippet": "An update on the status and initiatives of the Department of Government Efficiency (DOGE) as of 2025.",
+                                    "pagemap": {
+                                        "metatags": [
+                                            {
+                                                "og:title": "Department of Government Efficiency (DOGE) Update 2025",
+                                                "og:description": "An update on the status and initiatives of the Department of Government Efficiency (DOGE) as of 2025."
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "search_id": "search_doge_initiatives_02",
+                            "rationale": "Broader search for news and press releases related to government efficiency initiatives.",
+                            "parameters": {
+                                "query": "government efficiency initiatives press release \"Brooke Rollins\"",
+                                "daterestrict": "m6",
+                                "safe": "off",
+                                "siteSearch": ".gov",
+                                "siteSearchFilter": "i",
+                                "sort": "date"
+                            },
+                            "results": [
+                                {
+                                    "url": "https://www.usda.gov/media/press-releases/2025/02/14/secretary-rollins-pledges-greater-efficiency",
+                                    "title": "Secretary Rollins Takes Bold Action to Stop Wasteful Spending and Optimize USDA to Better Serve American Agriculture",
+                                    "snippet": "Today, U.S. Secretary of Agriculture Brooke Rollins addressed more than 400 USDA staffers, stakeholders and friends and pledged to bring greater efficiency...",
+                                    "pagemap": {
+                                        "metatags": [
+                                            {
+                                                "og:title": "Secretary Rollins Takes Bold Action to Stop Wasteful Spending",
+                                                "og:description": "In a bold move, Secretary Rollins has committed to eliminating wasteful spending within the USDA and optimizing its operations to better serve American agriculture."
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
