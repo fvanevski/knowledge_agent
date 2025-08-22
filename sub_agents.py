@@ -3,7 +3,7 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.tools import Tool
-from langchain_core.tools import tool
+from langchain_core.tools import tool, ToolException
 from pydantic import BaseModel, Field
 from typing import Dict, List
 import logging
@@ -32,8 +32,12 @@ def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: l
             result = await agent_executor.ainvoke({"input": input_data})
             sub_agent_logger.info(f"Agent finished successfully", extra={'output': result, 'agent_name': agent_name})
             return result
+        except ToolException as e:
+            error_message = f"The tool failed with the following error: {e}. Please try a different tool or a modified call."
+            sub_agent_logger.error(error_message, exc_info=True, extra={'agent_name': agent_name})
+            return {"error": error_message}
         except Exception as e:
-            sub_agent_logger.error(f"Agent failed with an exception: {e}", exc_info=True, extra={'agent_name': agent_name})
+            sub_agent_logger.error(f"Agent failed with an unexpected exception: {e}", exc_info=True, extra={'agent_name': agent_name})
             raise
 
     return logged_ainvoke
@@ -108,7 +112,21 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     researcher_prompt = '''Your goal is to find new, relevant sources for a given list of research topics. You must follow this specific workflow:
 
 1.  **Step 1: Research Topics.** For each topic you receive, perform up to 4 independent Google searches to find the most relevant URLs.
-2.  **Step 2: Produce a Report.** Consolidate your findings into a dictionary where the keys are the research topics and the values are the lists of URLs you found.
+2.  **Step 2: Produce a Report.** Consolidate your findings into a dictionary where the keys are the research topics and the values are **a flat list of URL strings**.
+
+        **Example of the correct output format:**
+        ```json
+        {{
+          "topic 1": [
+            "https://example.com/url1",
+            "https://example.com/url2"
+          ],
+          "topic 2": [
+            "https://example.com/url3",
+            "https://example.com/url4"
+          ]
+        }}
+        ```
 3.  **Step 3: Return the Report.** Return the report to the Orchestrator.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.'''
@@ -124,12 +142,14 @@ You must base your analysis exclusively on the output of your tools. Do not use 
     # 3. The Curator Agent Tool
     curator_prompt = '''Your goal is to review and ingest new sources into the LightRAG knowledge base. You will receive a research report from the Orchestrator containing topics and associated URLs. You must follow this specific workflow:
 
-1.  **Step 1: Establish list of URLs.** Review the research report provided by the Orchestrator. For each topic, generate a list of URLs to fetch using the `fetch` tool, noting for each URL its associated topic.
-2.  **Step 2: Fetch and evaluate content.** For each URL, fetch the content (all or partial if sufficient to make a determination) using the `fetch` tool and evaluate its relevance in relation to its associated topic, making a determination of whether or not to ingest. If you encounter an error (e.g., a 403 Forbidden error) while fetching a URL, you should log the error and the URL that caused it, and then continue to the next URL.
-3.  **Step 3: Ingest approved sources.** For sources you approve for ingestion, use your assigned tools to ingest them via the lightrag_mcp server. You must monitor the ingestion process using the `documents_pipeline_status` tool until it is complete.
-4.  **Step 4: Report ingestion results.** Finally, report a summary of what was successfully ingested to the Orchestrator.
+1.  **Step 1: Process URLs.** For each topic in the research report, iterate through the list of URLs.
+2.  **Step 2: Fetch and Evaluate.** For each URL, try to fetch the content.
+        *   **If the fetch is successful,** evaluate the content for relevance.
+        *   **If the fetch fails,** log the error, discard the URL, and continue to the next one.
+3.  **Step 3: Ingest Approved Sources.** Ingest all the sources that were successfully fetched and evaluated.
+4.  **Step 4: Report Ingestion Results.** Report a summary of what was successfully ingested and a list of any URLs that failed.
 
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge to fill in blanks; if the tools return no information, report that.'''
+You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.'''
     curator_agent = create_sub_agent(model, curator_tools, curator_prompt, logger, 'curator_agent')
     curator_tool = Tool.from_function(
         name="curator_agent",

@@ -208,3 +208,4 @@ __marimo__/
 
 # trace files
 trace*
+__pycache__/knowledge_agent.cpython-312.pyc
