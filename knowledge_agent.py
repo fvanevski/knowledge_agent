@@ -74,7 +74,7 @@ When you are called, you must follow this sequence precisely:
     all_tools = sub_agent_tools + [human_approval]
 
     agent = create_openai_tools_agent(model, all_tools, prompt)
-    
-    agent_executor = AgentExecutor(agent=agent, tools=all_tools, verbose=True)
+
+    agent_executor = AgentExecutor(agent=agent, tools=all_tools, verbose=True, handle_parsing_errors=True)
 
     return agent_executor
