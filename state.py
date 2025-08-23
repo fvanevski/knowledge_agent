@@ -11,7 +11,13 @@ class AgentState(TypedDict):
     mcp_tools: List[any]
     model: any
     logger: any
+
+    # Fields for the analyst agent's stateful workflow
+    analyst_report_id: Optional[str]
+
     # Fields for the researcher agent's stateful workflow
     researcher_report_id: Optional[str]
     researcher_gaps_todo: Optional[List[dict]]
+    researcher_current_gap: Optional[dict]
+    researcher_current_search: Optional[dict]
     researcher_gaps_complete: Optional[List[str]]

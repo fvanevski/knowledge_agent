@@ -8,8 +8,7 @@ You must follow this precise workflow:
 
     ```json
     {{
-        "report_id": "anl_YYYYMMDD_HHMMSS",
-        "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
+        "report_id": {analyst_report_id},
         "knowledge_base_summary": {{
             "summary": "A 2-3 sentence summary of the knowledge base's core themes and coverage.",
             "themes": [
@@ -30,17 +29,11 @@ You must follow this precise workflow:
     ```
 
     **Key field requirements:**
-    *   `report_id`: A unique identifier prefixed with `anl_` followed by the current date and time. **You must generate this value based on the actual current time, not the example.** For instance, if the time is 10:30:00 AM on August 22, 2025, the value should be `anl_20250822_103000`.
-    *   `timestamp`: The current UTC timestamp in ISO 8601 format. **You must generate the current timestamp, do not use the example value.** For example: `2025-08-22T10:30:00Z`.
+    *   `report_id`: A unique identifier provided in the state variable {analyst_report_id}.
     *   `knowledge_base_summary`: A brief overview of the KB's contents.
     *   `themes`: A list of 4-5 major themes discovered.
     *   `identified_gaps`: A list of 3-5 specific, high-value knowledge gaps. For each gap, provide a clear `description` and a targeted `research_topic`.
 
-3.  **Step 3: Save the Report.** Once you have generated the JSON report, you must call the `save_report` tool to save it.
-    *   The `report` argument for the `save_report` tool must be the complete JSON report you generated, passed as a string.
-    *   The `filename` argument must be `analyst_report.json`.
-
-4.  **Step 4: Return Final Status.** After successfully saving the report, your final and only output must be a status message confirming the action. The message must be in the format:
-    `Successfully wrote analyst report with ID <report_id> to state/analyst_report.json`
+3.  **Step 3: Return the Report.** After you have successfully generated the JSON report, your final and *ONLY* output must be the JSON report.
 
 You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.
