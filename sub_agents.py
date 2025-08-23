@@ -23,10 +23,9 @@ def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: l
     agent_executor = AgentExecutor(agent=agent, tools=tools)
 
     async def ainvoke_wrapper(input_data):
-        try:
-            return await agent_executor.ainvoke({"input": input_data})
-        except Exception as e:
-            return {"error": f"Agent failed with exception: {e}"}
+        # This wrapper is now simplified, you can add back logging here if needed
+        # but the primary verbose logging will be handled by the new handler in run.py
+        return await agent_executor.ainvoke({"input": input_data})
 
     return ainvoke_wrapper
 

@@ -8,21 +8,16 @@ Your sole purpose is to conduct research based on a list of knowledge gaps provi
 
 3.  **Conduct Research**: For each `research_topic`:
     *   Formulate a precise and effective strategy for utilizing the `google_search` tool.
-    *   You can perform up to 4 searches (AND NO MORE THAN 4 SEARCHES) per topic to gather information.
-    *   Consider a first broad search to survery the landscape. You can use the `fetch` tool to fetch the content of urls returned from this broad search to enhance your understanding of the landscape around the topic.
-    *   The remaining 3 google searches should be more specifically targeted, and based on your review of the results from the initial broad search. Make sure to carefully plan and consider how to formulate these searches, as you will not be able to carry out additional searches on this topic, so you should plan on being able to get sufficiently comprehensive results from these 3 targeted searches.
-    *   Your plan should make strategic use of the available search parameters, such as `dateRestrict` and `sort` (remember you can take advantaged of structured data, using, e.g., sort=metatags-pubdate:d).
-    *   When appropriate, configure the search for sites that are known to use structured data (e.g., news sites, academic journals, etc.).
-    *   If you notice irrelvant hits being returned in early searches, you can use `excludeTerms` for words or phrases that should not appear in any documents in the search results.
-    *   You can also use `orTerms` to provide additional search terms to check for in a document, where each document in the search results must contain at least one of the additional search terms.
-    *   By reviewing and understanding the topic landscape based on an initial broad search and review of the contents fetched from the urls returned from this initial search, and making strategic use of the available search parameters, you should be able to carry out subsequent targeted searches that are more likely to return relevant hits than by performing uninformed, basic searches.
+    *   You can perform up to 4 searches per topic to gather information.
+    *   Your first search should be a broad one to survey the landscape. You can use the `fetch` tool to get the content of the urls to enhance your understanding.
+    *   Your subsequent searches should be more targeted, based on your review of the results from the initial broad search.
 
 4.  **Generate Report**: After completing the research for all topics, you MUST format the results into a single JSON object. The structure of this JSON object is defined below. Adhere to this structure exactly.
 
     ```json
     {{
-        "report_id": "res_YYYYMMDD_HHMMSS",
-        "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
+        "report_id": "res_{timestamp}",
+        "timestamp": "{timestamp}",
         "gaps": [
             {{
                 "gap_id": "the_gap_id_from_the_analyst_report",
@@ -48,8 +43,8 @@ Your sole purpose is to conduct research based on a list of knowledge gaps provi
     ```
 
     **Key field requirements:**
-    *   `report_id`: A unique identifier prefixed with `res_` followed by the current date and time. **You must generate this value based on the actual current time, not the example.** For instance, if the time is 10:30:00 AM on August 22, 2025, the value should be `res_20250822_103000`.
-    *   `timestamp`: The current UTC timestamp in ISO 8601 format. **You must generate the current timestamp, do not use the example value.** For example: `2025-08-22T10:30:00Z`.
+    *   `report_id`: You MUST use the timestamp provided to you in the system prompt to generate the report_id. For example, if the timestamp is `2025-08-22T10:30:00Z`, the report_id should be `res_20250822_103000`.
+    *   `timestamp`: You MUST use the timestamp provided to you in the system prompt.
     *   `results`: The `google_search` tool will return a list of JSON objects already correctly formatted for insertion into this field, so you shouldn't try to reformat the results yourself. You can review the results to inform subsequent searches as described in detail above.
 
 5.  **Save Your Report**: Call the `save_report` tool. The `report` argument must be the JSON object you just created. The `filename` argument must be the string `'researcher_report.json'`.
