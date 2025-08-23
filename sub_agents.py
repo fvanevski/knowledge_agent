@@ -10,6 +10,7 @@ import logging
 import asyncio
 import json
 import os
+from datetime import datetime, timezone
 
 def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: logging.Logger, agent_name: str):
     """Helper function to create a sub-agent."""
@@ -20,7 +21,10 @@ def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: l
     ])
     agent = create_openai_tools_agent(llm, tools, prompt)
     
-    agent_executor = AgentExecutor(agent=agent, tools=tools)
+    # Generate timestamp
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    agent_executor = AgentExecutor(agent=agent, tools=tools, metadata={"timestamp": timestamp})
 
     async def ainvoke_wrapper(input_data):
         # This wrapper is now simplified, you can add back logging here if needed

@@ -1,6 +1,6 @@
-2025-08-22 17:47:32,366 - config - INFO - Loaded tools from /workspace/mcp_servers/lightrag_mcp/config.yaml: ['query', 'documents_upload_file', 'documents_insert_text', 'documents_scan', 'documents_upload_files', 'graphs_get', 'graph_labels', 'graph_entity_exists', 'graph_update_entity', 'graph_update_relation', 'documents_pipeline_status', 'documents_delete_entity', 'documents_delete_relation']
-2025-08-22 17:47:32,373 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
-2025-08-22 17:47:32,376 - INFO - Processing request of type ListToolsRequest
+2025-08-22 19:41:20,748 - config - INFO - Loaded tools from /workspace/mcp_servers/lightrag_mcp/config.yaml: ['query', 'documents_upload_file', 'documents_insert_text', 'documents_scan', 'documents_upload_files', 'graphs_get', 'graph_labels', 'graph_entity_exists', 'graph_update_entity', 'graph_update_relation', 'documents_pipeline_status', 'documents_delete_entity', 'documents_delete_relation']
+2025-08-22 19:41:20,755 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2025-08-22 19:41:20,770 - INFO - Processing request of type ListToolsRequest
 Secure MCP Filesystem Server running on stdio
 Client does not support MCP Roots, using allowed directories set from server args: [ '/workspace/knowledge_agent', '/workspace/LightRAG' ]
 Successfully loaded 32 tools from MCP server.
@@ -8,42 +8,17 @@ Successfully loaded 32 tools from MCP server.
 
 [1m> Entering new None chain...[0m
 [32;1m[1;3m
-Invoking: `load_report` with `{'filename': 'analyst_report.json'}`
+Invoking: `load_report` with `{'filename': 'latest_analyst_report.json'}`
 
 
-[0m[33;1m[1;3m{"report_id": "anl_20250822_112345", "timestamp": "2025-08-22T11:23:45Z", "knowledge_base_summary": {"summary": "The LightRAG knowledge base is a comprehensive repository on U.S. federal policy, civil rights, and democratic governance, with a strong emphasis on executive actions affecting DEI, fiscal reforms, election integrity, and national security. It contains extensive data on legislative history, court decisions, and sociopolitical trends.", "themes": [{"theme_id": "thm_dei_executive_actions", "description": "Executive orders and regulations targeting diversity, equity, and inclusion initiatives in federal agencies and contractors."}, {"theme_id": "thm_fiscal_policy", "description": "Tax legislation, budget proposals, deficit projections, and fiscal policy debates spanning the 2017 TCJA to the 2025 tax roadmap."}, {"theme_id": "thm_election_integrity", "description": "Voter suppression measures, election administration oversight, and Supreme Court rulings on voting rights."}, {"theme_id": "thm_civil_rights_discrimination", "description": "Anti-discrimination laws, hate crime statistics, and civil liberties protections across race, gender, and religious lines."}, {"theme_id": "thm_national_security_foreign_policy", "description": "U.S. defense strategy, immigration enforcement, foreign aid, and geopolitical developments involving key allies and adversaries."}]}, "identified_gaps": [{"gap_id": "gap_2025_infrastructure_bill", "description": "The knowledge base lacks detailed coverage of the 2025 bipartisan infrastructure bill, including its fiscal impact, project rollouts, and stakeholder analyses.", "research_topic": "Compile a comprehensive report on the 2025 Infrastructure Bill: legislative history, budget allocations, projected economic effects, and key political negotiations."}, {"gap_id": "gap_climate_policy_updates", "description": "Stale or missing information on post\u20112024 climate legislation, such as the Clean Energy Transition Act and updated EPA regulations.", "research_topic": "Investigate and document all federal climate policy actions taken since 2023, including new statutes, executive orders, and regulatory changes affecting emissions, renewable energy incentives, and environmental justice."}, {"gap_id": "gap_ai_governance", "description": "No current data on AI regulation initiatives, federal AI research funding, or emerging legal frameworks addressing algorithmic bias.", "research_topic": "Research the latest U.S. federal policies, bills, and executive actions concerning artificial intelligence governance, focusing on transparency, accountability, and anti\u2011bias measures."}, {"gap_id": "gap_postpandemic_economic_data", "description": "Outdated economic indicators (e.g., unemployment, inflation) and incomplete post\u2011COVID recovery statistics beyond 2023.", "research_topic": "Gather updated macroeconomic data for 2024\u20132025, including employment trends, inflation rates, and sectoral growth, with a focus on disparities among underrepresented groups."}, {"gap_id": "gap_supreme_court_recent_cases", "description": "Missing summaries of Supreme Court decisions issued in 2024\u20112025 related to voting rights, civil liberties, and executive power.", "research_topic": "Compile a briefing on all U.S. Supreme Court rulings from 2024\u20132025 that impact election law, freedom of speech, or federal regulatory authority."}]}[0m[32;1m[1;3m
-Invoking: `researcher_agent` with `{"report_id": "anl_20250822_112345", "timestamp": "2025-08-22T11:23:45Z", "knowledge_base_summary": {"summary": "The LightRAG knowledge base is a comprehensive repository on U.S. federal policy, civil rights, and democratic governance, with a strong emphasis on executive actions affecting DEI, fiscal reforms, election integrity, and national security. It contains extensive data on legislative history, court decisions, and sociopolitical trends.", "themes": [{"theme_id": "thm_dei_executive_actions", "description": "Executive orders and regulations targeting diversity, equity, and inclusion initiatives in federal agencies and contractors."}, {"theme_id": "thm_fiscal_policy", "description": "Tax legislation, budget proposals, deficit projections, and fiscal policy debates spanning the 2017 TCJA to the 2025 tax roadmap."}, {"theme_id": "thm_election_integrity", "description": "Voter suppression measures, election administration oversight, and Supreme Court rulings on voting rights."}, {"theme_id": "thm_civil_rights_discrimination", "description": "Anti-discrimination laws, hate crime statistics, and civil liberties protections across race, gender, and religious lines."}, {"theme_id": "thm_national_security_foreign_policy", "description": "U.S. defense strategy, immigration enforcement, foreign aid, and geopolitical developments involving key allies and adversaries."}]}, "identified_gaps": [{"gap_id": "gap_2025_infrastructure_bill", "description": "The knowledge base lacks detailed coverage of the 2025 bipartisan infrastructure bill, including its fiscal impact, project rollouts, and stakeholder analyses.", "research_topic": "Compile a comprehensive report on the 2025 Infrastructure Bill: legislative history, budget allocations, projected economic effects, and key political negotiations."}, {"gap_id": "gap_climate_policy_updates", "description": "Stale or missing information on post-2024 climate legislation, such as the Clean Energy Transition Act and updated EPA regulations.", "research_topic": "Investigate and document all federal climate policy actions taken since 2023, including new statutes, executive orders, and regulatory changes affecting emissions, renewable energy incentives, and environmental justice."}, {"gap_id": "gap_ai_governance", "description": "No current data on AI regulation initiatives, federal AI research funding, or emerging legal frameworks addressing algorithmic bias.", "research_topic": "Research the latest U.S. federal policies, bills, and executive actions concerning artificial intelligence governance, focusing on transparency, accountability, and anti-bias measures."}, {"gap_id": "gap_postpandemic_economic_data", "description": "Outdated economic indicators (e.g., unemployment, inflation) and incomplete post-COVID recovery statistics beyond 2023.", "research_topic": "Gather updated macroeconomic data for 2024-2025, including employment trends, inflation rates, and sectoral growth, with a focus on disparities among underrepresented groups."}, {"gap_id": "gap_supreme_court_recent_cases", "description": "Missing summaries of Supreme Court decisions issued in 2024-2025 related to voting rights, civil liberties, and executive power.", "research_topic": "Compile a briefing on all U.S. Supreme Court rulings from 2024-2025 that impact election law, freedom of speech, or federal regulatory authority."}]}`
-
-
-[0m
-
-[1m> Entering new AgentExecutor chain...[0m
-[36;1m[1;3m{'error': 'Agent failed with exception: \'Input to ChatPromptTemplate is missing variables {\\\'\\\\n        "report_id"\\\'}.  Expected: [\\\'\\\\n        "report_id"\\\', \\\'input\\\'] Received: [\\\'input\\\', \\\'intermediate_steps\\\', \\\'agent_scratchpad\\\']\\nNote: if you intended {\\n        "report_id"} to be part of the string and not a variable, please escape it with double curly braces like: \\\'{{\\n        "report_id"}}\\\'.\\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_PROMPT_INPUT \''}[0m[32;1m[1;3m
-Invoking: `researcher_agent` with `{"report_id": "anl_20250822_112345", "input": ""}`
+[0m[33;1m[1;3mNo report found.[0m[32;1m[1;3m
+Invoking: `researcher_agent` with ` `
 
 
 [0m
 
 [1m> Entering new AgentExecutor chain...[0m
-[36;1m[1;3m{'error': 'Agent failed with exception: \'Input to ChatPromptTemplate is missing variables {\\\'\\\\n        "report_id"\\\'}.  Expected: [\\\'\\\\n        "report_id"\\\', \\\'input\\\'] Received: [\\\'input\\\', \\\'intermediate_steps\\\', \\\'agent_scratchpad\\\']\\nNote: if you intended {\\n        "report_id"} to be part of the string and not a variable, please escape it with double curly braces like: \\\'{{\\n        "report_id"}}\\\'.\\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_PROMPT_INPUT \''}[0m[32;1m[1;3m
-Invoking: `researcher_agent` with `{"report_id":"anl_20250822_112345","input":""}`
-
-
-[0m
-
-[1m> Entering new AgentExecutor chain...[0m
-[36;1m[1;3m{'error': 'Agent failed with exception: \'Input to ChatPromptTemplate is missing variables {\\\'\\\\n        "report_id"\\\'}.  Expected: [\\\'\\\\n        "report_id"\\\', \\\'input\\\'] Received: [\\\'input\\\', \\\'intermediate_steps\\\', \\\'agent_scratchpad\\\']\\nNote: if you intended {\\n        "report_id"} to be part of the string and not a variable, please escape it with double curly braces like: \\\'{{\\n        "report_id"}}\\\'.\\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_PROMPT_INPUT \''}[0m[32;1m[1;3m
-Invoking: `researcher_agent` with `Conduct research`
-
-
-[0m
-
-[1m> Entering new AgentExecutor chain...[0m
-[36;1m[1;3m{'error': 'Agent failed with exception: \'Input to ChatPromptTemplate is missing variables {\\\'\\\\n        "report_id"\\\'}.  Expected: [\\\'\\\\n        "report_id"\\\', \\\'input\\\'] Received: [\\\'input\\\', \\\'intermediate_steps\\\', \\\'agent_scratchpad\\\']\\nNote: if you intended {\\n        "report_id"} to be part of the string and not a variable, please escape it with double curly braces like: \\\'{{\\n        "report_id"}}\\\'.\\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_PROMPT_INPUT \''}[0m[32;1m[1;3m
-Invoking: `researcher_agent` with `{'report_id': 'anl_20250822_112345', 'input': ''}`
-
-
-[0mTraceback (most recent call last):
+Traceback (most recent call last):
   File "/workspace/knowledge_agent/run.py", line 93, in <module>
     asyncio.run(main())
   File "/home/filip/.local/share/uv/python/cpython-3.12.11-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
@@ -69,10 +44,56 @@ Invoking: `researcher_agent` with `{'report_id': 'anl_20250822_112345', 'input':
                   ^^^^^^^^^^^^^^^^
   File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/tools/base.py", line 1001, in arun
     raise error_to_raise
-  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/tools/base.py", line 958, in arun
-    tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
-                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/tools/simple.py", line 89, in _to_args_and_kwargs
-    raise ToolException(msg)
-langchain_core.tools.base.ToolException: Too many arguments to single-input tool researcher_agent.
-                Consider using StructuredTool instead. Args: ['anl_20250822_112345', '']
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/tools/base.py", line 970, in arun
+    response = await coro_with_context(coro, context)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/tools/simple.py", line 122, in _arun
+    return await self.coroutine(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/sub_agents.py", line 28, in ainvoke_wrapper
+    return await agent_executor.ainvoke({"input": input_data})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain/chains/base.py", line 220, in ainvoke
+    await self._acall(inputs, run_manager=run_manager)
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1681, in _acall
+    next_step_output = await self._atake_next_step(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1463, in _atake_next_step
+    [
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 1491, in _aiter_next_step
+    output = await self._action_agent.aplan(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain/agents/agent.py", line 612, in aplan
+    async for chunk in self.runnable.astream(
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3467, in astream
+    async for chunk in self.atransform(input_aiter(), config, **kwargs):
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3449, in atransform
+    async for chunk in self._atransform_stream_with_config(
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 2320, in _atransform_stream_with_config
+    chunk = await coro_with_context(py_anext(iterator), context)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3416, in _atransform
+    async for output in final_pipeline:
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1472, in atransform
+    async for ichunk in input:
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5670, in atransform
+    async for item in self.bound.atransform(
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1472, in atransform
+    async for ichunk in input:
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1490, in atransform
+    async for output in self.astream(final, config, **kwargs):
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1035, in astream
+    yield await self.ainvoke(input, config, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/prompts/base.py", line 242, in ainvoke
+    return await self._acall_with_config(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1989, in _acall_with_config
+    output: Output = await coro_with_context(coro, context)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/prompts/base.py", line 195, in _aformat_prompt_with_error_handling
+    inner_input_ = self._validate_input(inner_input)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/knowledge_agent/.venv/lib/python3.12/site-packages/langchain_core/prompts/base.py", line 183, in _validate_input
+    raise KeyError(
+KeyError: "Input to ChatPromptTemplate is missing variables {'timestamp'}.  Expected: ['input', 'timestamp'] Received: ['input', 'intermediate_steps', 'agent_scratchpad']\nNote: if you intended {timestamp} to be part of the string and not a variable, please escape it with double curly braces like: '{{timestamp}}'.\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_PROMPT_INPUT "
