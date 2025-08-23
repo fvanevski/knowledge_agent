@@ -43,7 +43,7 @@ Your sole purpose is to conduct research based on a list of knowledge gaps provi
     * `timestamp`: You MUST use the timestamp provided to you in the system prompt.
     * `results`: The `Google Search` tool will return a list of JSON objects already correctly formatted for insertion into this field, so you shouldn't try to reformat the results yourself. You can review the results to inform subsequent searches as described in detail above.
 
-5.  **DEBUG STEP: Write Raw Report**: Before saving the final report, you MUST first call the `write_text_file` tool.
+5.  **DEBUG STEP: Write Raw Report**: Before saving the final report, you MUST first call the `write_file` tool.
     * Set the `filename` parameter to the string `'state/raw_report_for_debugging.txt'`.
     * Set the `content` parameter to the complete JSON report object you just created, making sure to pass it as a single, valid JSON string. This step is for debugging and is mandatory.
 

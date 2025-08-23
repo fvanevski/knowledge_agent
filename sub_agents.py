@@ -124,8 +124,8 @@ async def run_researcher(state: AgentState):
     logger = state['logger']
     timestamp = state['timestamp']
 
-    # **ADD THE `write_text_file` TOOL**
-    researcher_tools = [t for t in all_tools if t.name in ["google_search", "fetch", "write_text_file"]] + [load_report, save_report]
+    # **ADD THE `write_file` TOOL**
+    researcher_tools = [t for t in all_tools if t.name in ["google_search", "fetch", "write_file"]] + [load_report, save_report]
     
     with open("prompt_templates/researcher_prompt.txt", "r") as f:
         researcher_prompt = f.read()
