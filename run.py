@@ -3,9 +3,13 @@ import asyncio
 import logging
 import json
 from datetime import datetime, timezone
+from datetime import datetime, timezone
 import os
 import argparse
 import langchain
+from langchain_openai.chat_models import ChatOpenAI
+from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
+from state import AgentState
 from langchain_openai.chat_models import ChatOpenAI
 from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
 from state import AgentState
@@ -17,6 +21,7 @@ if not os.path.exists('logs'):
 # Create a custom JSON formatter
 class JsonFormatter(logging.Formatter):
     def format(self, record):
+        # Create a log record dictionary
         log_record = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
@@ -34,6 +39,8 @@ class JsonFormatter(logging.Formatter):
 
 # Configure the root logger to capture everything from all libraries
 log_file = f"logs/knowledge_agent_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(JsonFormatter())
 file_handler = logging.FileHandler(log_file)
 file_handler.setFormatter(JsonFormatter())
 
@@ -86,6 +93,32 @@ async def main():
 
     try:
         mcp_tools = await get_mcp_tools()
+
+        model = ChatOpenAI(
+            model="openai/gpt-oss-20b",
+            base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
+        )
+        
+        app = create_knowledge_agent_graph(task)
+
+        run_timestamp = datetime.now(timezone.utc).isoformat()
+
+        initial_state = {
+            "task": task,
+            "status": f"Starting '{task}' workflow.",
+            "timestamp": run_timestamp,
+            "mcp_tools": mcp_tools,
+            "model": model,
+            "logger": logger
+        }
+        
+        logger.info(f"--- Invoking graph for task: {task} ---")
+        
+        final_state = await app.ainvoke(initial_state)
+
+        print("--- Workflow Complete ---")
+        print(f"Final Status: {final_state['status']}")
+        logger.info(f"--- Workflow finished with final status: {final_state['status']} ---")
 
         model = ChatOpenAI(
             model="openai/gpt-oss-20b",
