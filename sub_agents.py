@@ -2,7 +2,7 @@
 from langchain_openai.chat_models import ChatOpenAI
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import tool
+from langchain_core.tools import tool, ToolException
 import json
 import os
 from state import AgentState
@@ -11,16 +11,34 @@ from state import AgentState
 def save_report(report: dict, filename: str):
     """Saves a report to a file in the state directory, appending to the 'reports' list within a JSON object."""
     filepath = f"state/{filename}"
-    file_data = {"reports": []}
-    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+    try:
+        # Read existing data if file exists
+        if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+            with open(filepath, "r") as f:
+                file_data = json.load(f)
+                if "reports" not in file_data or not isinstance(file_data["reports"], list):
+                    file_data["reports"] = []
+        else:
+            file_data = {"reports": []}
+
+        # Append new report
+        file_data["reports"].append(report)
+
+        # Write data back to file
+        with open(filepath, "w") as f:
+            json.dump(file_data, f, indent=4)
+
+        # Verification step
         with open(filepath, "r") as f:
-            file_data = json.load(f)
-            if "reports" not in file_data or not isinstance(file_data["reports"], list):
-                file_data["reports"] = []
-    file_data["reports"].append(report)
-    with open(filepath, "w") as f:
-        json.dump(file_data, f, indent=4)
-    return f"Successfully saved report to {filename}"
+            verify_data = json.load(f)
+        if verify_data["reports"][-1] == report:
+            return f"Successfully saved and verified report to {filename}"
+        else:
+            raise ToolException(f"Verification failed for {filename}. The data in the file does not match the data that was supposed to be saved.")
+
+    except (IOError, json.JSONDecodeError) as e:
+        raise ToolException(f"Failed to save report to {filename}. Error: {e}")
+
 
 @tool
 def load_report(filename: str) -> str:
@@ -56,7 +74,8 @@ def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
         ("placeholder", "{agent_scratchpad}"),
     ])
     agent = create_openai_tools_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True)
+    # Give the agent more steps to complete its work
+    return AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True, max_iterations=25)
 
 # --- Agent Node Functions ---
 
@@ -75,6 +94,7 @@ async def run_analyst(state: AgentState):
     
     task_input = "Your task is to identify knowledge gaps. Begin now."
     
+    # Pass timestamp as a separate key
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
     
     logger.info(f"Analyst Agent finished with output: {result['output']}")
@@ -95,7 +115,6 @@ async def run_researcher(state: AgentState):
 
     task_input = "Your task is to conduct research based on the latest analyst report. Begin now."
 
-    # CORRECTED LINE: Use ainvoke for async execution
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
     logger.info(f"Researcher Agent finished with output: {result['output']}")

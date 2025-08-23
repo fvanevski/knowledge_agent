@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 import os
 import argparse
+import langchain
 from langchain_openai.chat_models import ChatOpenAI
 from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
 from state import AgentState
@@ -21,6 +22,9 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "agent_name": getattr(record, 'agent_name', 'orchestrator'),
             "message": record.getMessage(),
+            "module": record.module,
+            "funcName": record.funcName,
+            "lineno": record.lineno
         }
         if hasattr(record, 'input'):
             log_record['input'] = record.input
@@ -30,12 +34,26 @@ class JsonFormatter(logging.Formatter):
 
 # Configure the logger
 log_file = f"logs/knowledge_agent_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-handler = logging.FileHandler(log_file)
-handler.setFormatter(JsonFormatter())
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(JsonFormatter())
 
+# Console logger for immediate feedback
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+# Get the root logger for this application
 logger = logging.getLogger('KnowledgeAgent')
 logger.setLevel(logging.INFO)
-logger.addHandler(handler)
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+# Get the root logger for langchain and add our handler to it
+langchain_logger = logging.getLogger('langchain')
+langchain_logger.addHandler(file_handler)
+langchain_logger.setLevel(logging.INFO) # Set level for langchain logger as well
+
+# Enable verbose logging for LangChain to see the agent's thoughts
+langchain.verbose = True
 
 async def main():
     parser = argparse.ArgumentParser(description="Run the Knowledge Agent with a specific workflow.")
@@ -88,7 +106,6 @@ async def main():
         
         logger.info(f"--- Invoking graph for task: {task} ---")
         
-        # CORRECTED LINE: Use the async 'ainvoke' method for the graph
         final_state = await app.ainvoke(initial_state)
 
         print("--- Workflow Complete ---")
