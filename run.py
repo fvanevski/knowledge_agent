@@ -2,12 +2,13 @@
 import asyncio
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import argparse
 import langchain
-import re
-from knowledge_agent import get_mcp_tools, create_knowledge_agent
+from langchain_openai.chat_models import ChatOpenAI
+from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
+from state import AgentState
 
 # Create a logs directory if it doesn't exist
 if not os.path.exists('logs'):
@@ -19,25 +20,40 @@ class JsonFormatter(logging.Formatter):
         log_record = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
-            "agent_name": getattr(record, 'agent_name', 'orchestrator'),
+            "name": record.name,
             "message": record.getMessage(),
+            "module": record.module,
+            "funcName": record.funcName,
+            "lineno": record.lineno
         }
-        if hasattr(record, 'input'):
-            log_record['input'] = record.input
-        if hasattr(record, 'output'):
-            log_record['output'] = record.output
         return json.dumps(log_record)
 
-# Configure the logger
+# ******************************
+# ** START: DEFINITIVE LOGGING FIX **
+# ******************************
+
+# Configure the root logger to capture everything from all libraries
 log_file = f"logs/knowledge_agent_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-handler = logging.FileHandler(log_file)
-handler.setFormatter(JsonFormatter())
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(JsonFormatter())
 
-logger = logging.getLogger('KnowledgeAgent')
-logger.setLevel(logging.INFO)
-logger.addHandler(handler)
+# The root logger will now send all logs to the file handler
+logging.basicConfig(level=logging.INFO, handlers=[file_handler])
 
+# Add a separate, simple console logger for immediate feedback
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logging.getLogger().addHandler(console_handler)
+
+# Enable LangChain's verbose mode, which will now be captured by the root logger
 langchain.verbose = True
+
+# ******************************
+# ** END: DEFINITIVE LOGGING FIX **
+# ******************************
+
+# Get a specific logger for our application's own messages
+logger = logging.getLogger('KnowledgeAgent')
 
 
 async def main():
@@ -69,23 +85,34 @@ async def main():
     logger.info(f"Initializing Knowledge Agent for task: {task}...")
 
     try:
-        # 1. Fetch the tools from your running MCP server
         mcp_tools = await get_mcp_tools()
 
-        # 2. Create the agent with the loaded tools
-        knowledge_agent = create_knowledge_agent(mcp_tools, logger, task)
+        model = ChatOpenAI(
+            model="openai/gpt-oss-20b",
+            base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
+        )
+        
+        app = create_knowledge_agent_graph(task)
 
-        # 3. Define the initial task for the agent
-        initial_task = f"Your task is to execute the {task} workflow. Begin now."
+        run_timestamp = datetime.now(timezone.utc).isoformat()
 
-        logger.info(f"--- Sending initial task to agent ---", extra={'input': initial_task})
+        initial_state = {
+            "task": task,
+            "status": f"Starting '{task}' workflow.",
+            "timestamp": run_timestamp,
+            "mcp_tools": mcp_tools,
+            "model": model,
+            "logger": logger
+        }
+        
+        logger.info(f"--- Invoking graph for task: {task} ---")
+        
+        final_state = await app.ainvoke(initial_state)
 
-        # 4. Invoke the agent and stream the response
-        async for chunk in knowledge_agent.astream(
-            {"input": initial_task}
-        ):
-            # The agent's output will be logged by the agent itself
-            pass
+        print("--- Workflow Complete ---")
+        print(f"Final Status: {final_state['status']}")
+        logger.info(f"--- Workflow finished with final status: {final_state['status']} ---")
+
     finally:
         logging.shutdown()
 
