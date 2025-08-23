@@ -2,12 +2,12 @@
 import asyncio
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import argparse
-import langchain
-import re
-from knowledge_agent import get_mcp_tools, create_knowledge_agent
+from langchain_openai.chat_models import ChatOpenAI
+from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
+from state import AgentState
 
 # Create a logs directory if it doesn't exist
 if not os.path.exists('logs'):
@@ -36,9 +36,6 @@ handler.setFormatter(JsonFormatter())
 logger = logging.getLogger('KnowledgeAgent')
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
-
-langchain.verbose = True
-
 
 async def main():
     parser = argparse.ArgumentParser(description="Run the Knowledge Agent with a specific workflow.")
@@ -69,23 +66,35 @@ async def main():
     logger.info(f"Initializing Knowledge Agent for task: {task}...")
 
     try:
-        # 1. Fetch the tools from your running MCP server
         mcp_tools = await get_mcp_tools()
 
-        # 2. Create the agent with the loaded tools
-        knowledge_agent = create_knowledge_agent(mcp_tools, logger, task)
+        model = ChatOpenAI(
+            model="openai/gpt-oss-20b",
+            base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
+        )
+        
+        app = create_knowledge_agent_graph(task)
 
-        # 3. Define the initial task for the agent
-        initial_task = f"Your task is to execute the {task} workflow. Begin now."
+        run_timestamp = datetime.now(timezone.utc).isoformat()
 
-        logger.info(f"--- Sending initial task to agent ---", extra={'input': initial_task})
+        initial_state = {
+            "task": task,
+            "status": f"Starting '{task}' workflow.",
+            "timestamp": run_timestamp,
+            "mcp_tools": mcp_tools,
+            "model": model,
+            "logger": logger
+        }
+        
+        logger.info(f"--- Invoking graph for task: {task} ---")
+        
+        # CORRECTED LINE: Use the async 'ainvoke' method for the graph
+        final_state = await app.ainvoke(initial_state)
 
-        # 4. Invoke the agent and stream the response
-        async for chunk in knowledge_agent.astream(
-            {"input": initial_task}
-        ):
-            # The agent's output will be logged by the agent itself
-            pass
+        print("--- Workflow Complete ---")
+        print(f"Final Status: {final_state['status']}")
+        logger.info(f"--- Workflow finished with final status: {final_state['status']} ---")
+
     finally:
         logging.shutdown()
 

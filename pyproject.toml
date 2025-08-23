@@ -10,4 +10,5 @@ dependencies = [
     "pydantic",
     "python-dotenv",
     "langchain",
+    "langgraph",
 ]
