@@ -55,7 +55,6 @@ def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
         ("human", "{input}"),
         ("placeholder", "{agent_scratchpad}"),
     ])
-    # The agent executor will now correctly receive the timestamp
     agent = create_openai_tools_agent(llm, tools, prompt)
     return AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True)
 
@@ -76,8 +75,7 @@ async def run_analyst(state: AgentState):
     
     task_input = "Your task is to identify knowledge gaps. Begin now."
     
-    # Pass timestamp as a separate key
-    result = await agent_executor.invoke({"input": task_input, "timestamp": timestamp})
+    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
     
     logger.info(f"Analyst Agent finished with output: {result['output']}")
     return {"status": result['output']}
@@ -97,8 +95,8 @@ async def run_researcher(state: AgentState):
 
     task_input = "Your task is to conduct research based on the latest analyst report. Begin now."
 
-    # Pass timestamp as a separate key
-    result = await agent_executor.invoke({"input": task_input, "timestamp": timestamp})
+    # CORRECTED LINE: Use ainvoke for async execution
+    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
     logger.info(f"Researcher Agent finished with output: {result['output']}")
     return {"status": result['output']}
@@ -121,7 +119,7 @@ async def run_curator(state: AgentState):
     
     task_input = "Your task is to curate the latest research report. Begin now."
 
-    result = await agent_executor.invoke({"input": task_input, "timestamp": timestamp})
+    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
     logger.info(f"Curator Agent finished with output: {result['output']}")
     return {"status": result['output']}
@@ -143,7 +141,7 @@ async def run_auditor(state: AgentState):
     
     task_input = "Your task is to audit the knowledge base. Begin now."
 
-    result = await agent_executor.invoke({"input": task_input, "timestamp": timestamp})
+    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
     
     logger.info(f"Auditor Agent finished with output: {result['output']}")
     return {"status": result['output']}
@@ -167,7 +165,7 @@ async def run_fixer(state: AgentState):
 
     task_input = "Your task is to fix issues from the auditor's report. Begin now."
 
-    result = await agent_executor.invoke({"input": task_input, "timestamp": timestamp})
+    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
     logger.info(f"Fixer Agent finished with output: {result['output']}")
     return {"status": result['output']}
@@ -190,7 +188,7 @@ async def run_advisor(state: AgentState):
     
     task_input = "Your task is to provide recommendations based on the latest audit and fix reports. Begin now."
 
-    result = await agent_executor.invoke({"input": task_input, "timestamp": timestamp})
+    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
     logger.info(f"Advisor Agent finished with output: {result['output']}")
     return {"status": result['output']}
