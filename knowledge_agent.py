@@ -51,7 +51,7 @@ When you are called, you must follow this sequence precisely:
 6.  After the fixer reports that its tasks are complete, you will call the `advisor_agent`, providing it with the reports from both the auditor and the fixer to analyze. The advisor will return its own report with recommendations for addressing the underlying causes of any identified issues (such as by modifying the ingestion prompts or LightRAG server configuration).
 7.  Finally, based on the report from the advisor, you must provide a session summary to the user as your response, covering all the actions taken by the various sub-agents and any recommendations provided by the advisor.''',
         "analyze": "Your task is to call the `analyst_agent` to identify knowledge gaps and stale information. The analyst will save its report to `state/analyst_report.json` and return a status update. Your final output should be the status update from the analyst agent.",
-        "research": "Your task is to call the `researcher_agent` to conduct research based on the latest analyst report. The researcher will save its report to `state/researcher_report.json` and return a status update. Your final output should be the status update from the researcher agent.",
+        "research": "Your task is to first check if the `analyst_report.json` file exists in the `state` directory. If it does not exist, you should inform the user that the analyst report is missing and the research workflow cannot proceed. If the file exists, you will then call the `researcher_agent` to conduct research based on the latest analyst report. The researcher will save its report to `state/researcher_report.json` and return a status update. Your final output should be the status update from the researcher agent.",
         "curate": "Your task is to call the `curator_agent` to carry out its workflow based on the research report. The curator will save its report to `state/curator_report.json` and return a status update.",
         "audit": "Your task is to call the `auditor_agent` to review the knowledge base for data quality issues. You should then save the auditor's report to a file named `auditor_report.json` in the `state` directory.",
         "fix": "Your task is to read the `auditor_report.json` file from the `state` directory, then call the `fixer_agent` with the auditor's report. You should then save the fixer's report to a file named `fixer_report.json` in the `state` directory.",
@@ -75,6 +75,6 @@ When you are called, you must follow this sequence precisely:
 
     agent = create_openai_tools_agent(model, all_tools, prompt)
 
-    agent_executor = AgentExecutor(agent=agent, tools=all_tools, verbose=True, handle_parsing_errors=True)
+    agent_executor = AgentExecutor(agent=agent, tools=all_tools, handle_parsing_errors=True)
 
     return agent_executor

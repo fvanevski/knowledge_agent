@@ -5,6 +5,8 @@ import json
 from datetime import datetime
 import os
 import argparse
+import langchain
+import re
 from knowledge_agent import get_mcp_tools, create_knowledge_agent
 
 # Create a logs directory if it doesn't exist
@@ -34,6 +36,8 @@ handler.setFormatter(JsonFormatter())
 logger = logging.getLogger('KnowledgeAgent')
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
+
+langchain.verbose = True
 
 
 async def main():

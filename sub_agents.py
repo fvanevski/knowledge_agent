@@ -12,7 +12,7 @@ import json
 import os
 
 def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: logging.Logger, agent_name: str):
-    """Helper function to create a sub-agent with structured logging."""
+    """Helper function to create a sub-agent."""
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("human", "{input}"),
@@ -20,27 +20,15 @@ def create_sub_agent(llm: ChatOpenAI, tools: list, system_prompt: str, logger: l
     ])
     agent = create_openai_tools_agent(llm, tools, prompt)
     
-    # Create a child logger for the sub-agent
-    sub_agent_logger = logger.getChild(agent_name)
+    agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-    # Wrapper to log inputs and outputs
-    async def logged_ainvoke(input_data):
-        sub_agent_logger.info(f"Invoking agent", extra={'input': json.dumps(input_data), 'agent_name': agent_name})
+    async def ainvoke_wrapper(input_data):
         try:
-            result = await agent_executor.ainvoke({"input": input_data})
-            sub_agent_logger.info(f"Agent finished successfully", extra={'output': result, 'agent_name': agent_name})
-            return result
-        except ToolException as e:
-            error_message = f"The tool failed with the following error: {e}. Please try a different tool or a modified call."
-            sub_agent_logger.error(error_message, exc_info=True, extra={'agent_name': agent_name})
-            return {"error": error_message}
+            return await agent_executor.ainvoke({"input": input_data})
         except Exception as e:
-            sub_agent_logger.error(f"Agent failed with an unexpected exception: {e}", exc_info=True, extra={'agent_name': agent_name})
-            raise
+            return {"error": f"Agent failed with exception: {e}"}
 
-    return logged_ainvoke
+    return ainvoke_wrapper
 
 class CuratorAgentArgs(BaseModel):
     research_report: Dict[str, List[str]] = Field(description="A dictionary where keys are topics (preserving the full context of the knowledge gap) and values are lists of URLs to consider for ingestion.")
@@ -53,13 +41,8 @@ class AdvisorAgentArgs(BaseModel):
     fixer_report: str = Field(description="The report from the Fixer.")
 
 @tool
-def save_report(report: str, filename: str):
+def save_report(report: dict, filename: str):
     """Saves a report to a file in the state directory, appending to the 'reports' list within a JSON object."""
-    try:
-        new_report_dict = json.loads(report)
-    except json.JSONDecodeError as e:
-        return f"Error: The provided report is not a valid JSON. Please fix the JSON and try again. Details: {e}"
-
     filepath = f"state/{filename}"
     
     # Default structure
@@ -74,7 +57,7 @@ def save_report(report: str, filename: str):
                 file_data["reports"] = []
     
     # Append the new report dictionary to the list
-    file_data["reports"].append(new_report_dict)
+    file_data["reports"].append(report)
     
     # Write the updated structure back to the file
     with open(filepath, "w") as f:
@@ -101,7 +84,7 @@ def get_sub_agent_tools(all_tools: list, model: ChatOpenAI, logger: logging.Logg
 
     # Filter tools for each agent
     analyst_tools = [t for t in all_tools if t.name in ["query", "graphs_get", "graph_labels"]] + [save_report]
-    researcher_tools = [t for t in all_tools if t.name == "google_search"] + [load_report, save_report]
+    researcher_tools = [t for t in all_tools if t.name in ["google_search", "fetch"]] + [load_report, save_report]
     curator_tools = [t for t in all_tools if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]]
     auditor_tools = [t for t in all_tools if t.name in ["graphs_get", "query"]]
     fixer_tools = [t for t in all_tools if t.name in ["human_approval", "graph_update_entity", "documents_delete_entity", "graph_update_relation", "documents_delete_relation", "graph_entity_exists"]]
