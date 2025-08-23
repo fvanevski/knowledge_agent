@@ -1,5 +1,5 @@
 # state.py
-from typing import TypedDict, List
+from typing import TypedDict, List, Optional
 
 class AgentState(TypedDict):
     """
@@ -11,3 +11,7 @@ class AgentState(TypedDict):
     mcp_tools: List[any]
     model: any
     logger: any
+    # Fields for the researcher agent's stateful workflow
+    researcher_report_id: Optional[str]
+    researcher_gaps_todo: Optional[List[dict]]
+    researcher_gaps_complete: Optional[List[str]]

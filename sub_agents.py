@@ -5,59 +5,101 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool, ToolException
 import json
 import os
+from datetime import datetime
 from state import AgentState
 
 @tool
-def save_report(report: dict, filename: str):
-    """Saves a report to a file in the state directory, appending to the 'reports' list within a JSON object."""
-    print(f"\n--- save_report tool called for {filename} ---")
+def initialize_researcher_report(timestamp: str) -> dict:
+    """
+    Initializes the researcher's report.
+    This tool should be called once at the beginning of the researcher's workflow.
+    It reads the analyst's report, creates the initial structure for the researcher_report.json,
+    and returns the report_id and the list of gaps to be populated into the AgentState.
+    """
+    print("\n--- initialize_researcher_report tool called ---")
+    analyst_report_str = load_report('analyst_report.json')
+    if "No report found" in analyst_report_str:
+        raise ToolException("Analyst report not found.")
     
-    # Ensure the 'state' directory exists
-    if not os.path.exists('state'):
-        os.makedirs('state')
-        
-    filepath = f"state/{filename}"
+    analyst_report = json.loads(analyst_report_str)
     
-    try:
-        # The agent often passes a string, so we must parse it.
-        if isinstance(report, str):
-            print("DEBUG: 'report' is a string, parsing as JSON.")
-            try:
-                report = json.loads(report)
-            except json.JSONDecodeError as e:
-                raise ToolException(f"Tool input 'report' was a string but is not valid JSON. Error: {e}. Content: '{report}'")
-
-        if not isinstance(report, dict):
-            raise TypeError(f"The 'report' argument must be a dictionary or a valid JSON string, but got {type(report)}.")
-
-        # Read existing data
-        file_data = {"reports": []}
-        if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-            with open(filepath, "r") as f:
-                file_data = json.load(f)
-                if "reports" not in file_data or not isinstance(file_data["reports"], list):
-                    file_data["reports"] = []
-        
-        # Append new report
-        file_data["reports"].append(report)
-        
-        # Write data back to file
-        with open(filepath, "w") as f:
-            json.dump(file_data, f, indent=4)
-
-        # Verification step
+    report_id = f"res_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
+    
+    gaps_to_do = [
+        {"gap_id": gap["gap_id"], "description": gap["description"], "research_topic": gap["research_topic"]}
+        for gap in analyst_report.get("identified_gaps", [])
+    ]
+    
+    new_report = {
+        "report_id": report_id,
+        "timestamp": timestamp,
+        "gaps": []
+    }
+    
+    filepath = "state/researcher_report.json"
+    file_data = {"reports": []}
+    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         with open(filepath, "r") as f:
-            verify_data = json.load(f)
+            file_data = json.load(f)
+    
+    file_data["reports"].append(new_report)
+    
+    with open(filepath, "w") as f:
+        json.dump(file_data, f, indent=4)
         
-        if verify_data["reports"][-1] == report:
-            print(f"--- File write to {filename} VERIFIED ---")
-            return f"Successfully saved and verified report to {filepath}"
-        else:
-            raise ToolException(f"Verification failed. The saved data in {filename} does not match the input report.")
+    return {
+        "researcher_report_id": report_id,
+        "researcher_gaps_todo": gaps_to_do
+    }
 
-    except (IOError, TypeError, json.JSONDecodeError, ToolException) as e:
-        print(f"--- ERROR in save_report: {e} ---")
-        raise ToolException(f"An error occurred in save_report: {e}")
+@tool
+def update_researcher_report(report_id: str, gap_id: str, description: str, search_rationale: str, search_parameters: dict, search_results: list):
+    """
+    Updates the researcher's report with the results of a single search.
+    """
+    print(f"\n--- update_researcher_report tool called for gap_id: {gap_id} ---")
+    filepath = "state/researcher_report.json"
+    
+    with open(filepath, "r") as f:
+        file_data = json.load(f)
+        
+    report_found = False
+    for report in file_data["reports"]:
+        if report["report_id"] == report_id:
+            report_found = True
+            gap_found = False
+            for gap in report["gaps"]:
+                if gap["gap_id"] == gap_id:
+                    gap_found = True
+                    search_id = f"search_{gap_id}_{len(gap['searches']) + 1}"
+                    gap["searches"].append({
+                        "search_id": search_id,
+                        "rationale": search_rationale,
+                        "parameters": search_parameters,
+                        "results": search_results
+                    })
+                    break
+            if not gap_found:
+                search_id = f"search_{gap_id}_1"
+                report["gaps"].append({
+                    "gap_id": gap_id,
+                    "description": description,
+                    "searches": [{
+                        "search_id": search_id,
+                        "rationale": search_rationale,
+                        "parameters": search_parameters,
+                        "results": search_results
+                    }]
+                })
+            break
+            
+    if not report_found:
+        raise ToolException(f"Report with ID {report_id} not found in {filepath}")
+
+    with open(filepath, "w") as f:
+        json.dump(file_data, f, indent=4)
+        
+    return f"Successfully updated report {report_id} with search for gap {gap_id}."
 
 @tool
 def load_report(filename: str) -> str:
@@ -86,6 +128,7 @@ def human_approval(plan: str) -> str:
     return "denied"
 
 def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
+
     """Helper function to create a sub-agent executor."""
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -93,7 +136,7 @@ def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
         ("placeholder", "{agent_scratchpad}"),
     ])
     agent = create_openai_tools_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True, max_iterations=25)
+    return AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True, max_iterations=150)
 
 # --- Agent Node Functions ---
 
@@ -119,25 +162,44 @@ async def run_analyst(state: AgentState):
 
 async def run_researcher(state: AgentState):
     print("--- Running Researcher Agent ---")
-    all_tools = state['mcp_tools']
     model = state['model']
     logger = state['logger']
     timestamp = state['timestamp']
+    all_tools = state['mcp_tools']
 
-    # **ADD THE `write_file` TOOL**
-    researcher_tools = [t for t in all_tools if t.name in ["google_search", "fetch", "write_file"]] + [load_report, save_report]
-    
+    # 1. Explicitly check if the state needs initialization
+    if not state.get("researcher_report_id"):
+        print("--- State not initialized. Calling initialize_researcher_report directly. ---")
+        # Call the tool directly from the node, not through the agent
+        init_result = initialize_researcher_report(timestamp)
+        # Update the state with the results from the initialization
+        state.update(init_result)
+        state["status"] = "Initialized researcher report. Starting research."
+        logger.info("Researcher report initialized.")
+        # Now, the state is guaranteed to be initialized for the next steps.
+
+    # 2. Setup and run the main research agent
+    # The agent now assumes the state is already initialized.
+    researcher_tools = [t for t in all_tools if t.name in ["google_search", "fetch"]] + [update_researcher_report]
+
     with open("prompt_templates/researcher_prompt.txt", "r") as f:
         researcher_prompt = f.read()
 
     agent_executor = create_agent_executor(model, researcher_tools, researcher_prompt)
 
-    task_input = "Your task is to conduct research based on the latest analyst report. Begin now."
+    input_data = {
+        "input": "Your task is to conduct research based on the latest analyst report. Begin now.",
+        "researcher_report_id": state.get("researcher_report_id"),
+        "researcher_gaps_todo": state.get("researcher_gaps_todo"),
+        "researcher_gaps_complete": state.get("researcher_gaps_complete", [])
+    }
 
-    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
+    result = await agent_executor.ainvoke(input_data)
 
-    logger.info(f"Researcher Agent finished with output: {result['output']}")
-    return {"status": result['output']}
+    # The final state update will just be the status from the agent
+    final_status = result.get('output', 'Researcher finished with no output.')
+    logger.info(f"Researcher Agent finished with output: {final_status}")
+    return {"status": final_status}
 
 async def run_curator(state: AgentState):
     print("--- Running Curator Agent ---")
