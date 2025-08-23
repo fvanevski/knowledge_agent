@@ -17,19 +17,18 @@ if not os.path.exists('logs'):
 # Create a custom JSON formatter
 class JsonFormatter(logging.Formatter):
     def format(self, record):
+        # Create a log record dictionary
         log_record = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
-            "agent_name": getattr(record, 'agent_name', 'orchestrator'),
             "message": record.getMessage(),
             "module": record.module,
             "funcName": record.funcName,
             "lineno": record.lineno
         }
-        if hasattr(record, 'input'):
-            log_record['input'] = record.input
-        if hasattr(record, 'output'):
-            log_record['output'] = record.output
+        # Add agent name if it exists
+        if hasattr(record, 'agent_name'):
+            log_record['agent_name'] = record.agent_name
         return json.dumps(log_record)
 
 # Configure the logger
@@ -39,7 +38,8 @@ file_handler.setFormatter(JsonFormatter())
 
 # Console logger for immediate feedback
 console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+console_handler.setLevel(logging.INFO)
 
 # Get the root logger for this application
 logger = logging.getLogger('KnowledgeAgent')
@@ -47,12 +47,12 @@ logger.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-# Get the root logger for langchain and add our handler to it
+# **CRITICAL FIX FOR LOGGING**: Capture LangChain's verbose output in our log file
 langchain_logger = logging.getLogger('langchain')
+langchain_logger.setLevel(logging.INFO)
 langchain_logger.addHandler(file_handler)
-langchain_logger.setLevel(logging.INFO) # Set level for langchain logger as well
 
-# Enable verbose logging for LangChain to see the agent's thoughts
+# Enable verbose logging for LangChain to see the agent's thoughts in the console
 langchain.verbose = True
 
 async def main():

@@ -1,2 +1,1338 @@
-usage: run.py [-h]
-run.py: error: unrecognized arguments: --research
+2025-08-22 22:17:29,959 - KnowledgeAgent - INFO - Initializing Knowledge Agent for task: research...
+2025-08-22 22:17:30,267 - config - INFO - Loaded tools from /workspace/mcp_servers/lightrag_mcp/config.yaml: ['query', 'documents_upload_file', 'documents_insert_text', 'documents_scan', 'documents_upload_files', 'graphs_get', 'graph_labels', 'graph_entity_exists', 'graph_update_entity', 'graph_update_relation', 'documents_pipeline_status', 'documents_delete_entity', 'documents_delete_relation']
+2025-08-22 22:17:30,272 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2025-08-22 22:17:30,278 - INFO - Processing request of type ListToolsRequest
+Secure MCP Filesystem Server running on stdio
+Client does not support MCP Roots, using allowed directories set from server args: [ '/workspace/knowledge_agent', '/workspace/LightRAG' ]
+2025-08-22 22:17:31,135 - KnowledgeAgent - INFO - --- Invoking graph for task: research ---
+2025-08-22 22:17:40,614 - INFO - Processing request of type CallToolRequest
+2025-08-22 22:17:40,623 - INFO - Executing google_search with query: '2025 bipartisan infrastructure bill overview'
+2025-08-22 22:17:40,906 - INFO - Processing request of type ListToolsRequest
+Successfully loaded 32 tools from MCP server.
+--- Running Researcher Agent ---
+
+
+[1m> Entering new AgentExecutor chain...[0m
+[32;1m[1;3m
+Invoking: `load_report` with `{'filename': 'analyst_report.json'}`
+
+
+[0m[38;5;200m[1;3m{"report_id": "anl_20250822_112345", "timestamp": "2025-08-22T11:23:45Z", "knowledge_base_summary": {"summary": "The LightRAG knowledge base is a comprehensive repository on U.S. federal policy, civil rights, and democratic governance, with a strong emphasis on executive actions affecting DEI, fiscal reforms, election integrity, and national security. It contains extensive data on legislative history, court decisions, and sociopolitical trends.", "themes": [{"theme_id": "thm_dei_executive_actions", "description": "Executive orders and regulations targeting diversity, equity, and inclusion initiatives in federal agencies and contractors."}, {"theme_id": "thm_fiscal_policy", "description": "Tax legislation, budget proposals, deficit projections, and fiscal policy debates spanning the 2017 TCJA to the 2025 tax roadmap."}, {"theme_id": "thm_election_integrity", "description": "Voter suppression measures, election administration oversight, and Supreme Court rulings on voting rights."}, {"theme_id": "thm_civil_rights_discrimination", "description": "Anti-discrimination laws, hate crime statistics, and civil liberties protections across race, gender, and religious lines."}, {"theme_id": "thm_national_security_foreign_policy", "description": "U.S. defense strategy, immigration enforcement, foreign aid, and geopolitical developments involving key allies and adversaries."}]}, "identified_gaps": [{"gap_id": "gap_2025_infrastructure_bill", "description": "The knowledge base lacks detailed coverage of the 2025 bipartisan infrastructure bill, including its fiscal impact, project rollouts, and stakeholder analyses.", "research_topic": "Compile a comprehensive report on the 2025 Infrastructure Bill: legislative history, budget allocations, projected economic effects, and key political negotiations."}, {"gap_id": "gap_climate_policy_updates", "description": "Stale or missing information on post\u20112024 climate legislation, such as the Clean Energy Transition Act and updated EPA regulations.", "research_topic": "Investigate and document all federal climate policy actions taken since 2023, including new statutes, executive orders, and regulatory changes affecting emissions, renewable energy incentives, and environmental justice."}, {"gap_id": "gap_ai_governance", "description": "No current data on AI regulation initiatives, federal AI research funding, or emerging legal frameworks addressing algorithmic bias.", "research_topic": "Research the latest U.S. federal policies, bills, and executive actions concerning artificial intelligence governance, focusing on transparency, accountability, and anti\u2011bias measures."}, {"gap_id": "gap_postpandemic_economic_data", "description": "Outdated economic indicators (e.g., unemployment, inflation) and incomplete post\u2011COVID recovery statistics beyond 2023.", "research_topic": "Gather updated macroeconomic data for 2024\u20132025, including employment trends, inflation rates, and sectoral growth, with a focus on disparities among underrepresented groups."}, {"gap_id": "gap_supreme_court_recent_cases", "description": "Missing summaries of Supreme Court decisions issued in 2024\u20112025 related to voting rights, civil liberties, and executive power.", "research_topic": "Compile a briefing on all U.S. Supreme Court rulings from 2024\u20132025 that impact election law, freedom of speech, or federal regulatory authority."}]}[0m[32;1m[1;3m
+Invoking: `google_search` with `{'query': '2025 bipartisan infrastructure bill overview', 'num': 10, 'safe': 'off'}`
+
+
+[0m[36;1m[1;3m[
+    {
+        "url": "https://www.transportation.gov/grants/SS4A",
+        "title": "Safe Streets and Roads for All (SS4A) Grant Program | US ...",
+        "snippet": "View the SS4A Webinar Series page for recordings and presentation materials. Program Overview. The Infrastructure Investment and Jobs Act (IIJA) established the\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKac65dDxz51-RJfXXLqbvcvYU2lTuRDpDH9je-lnCeFGHCC0boQqy5NA&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Safe Streets and Roads for All (SS4A) Grant Program",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "The Safe Streets and Roads for All (SS4A) discretionary program provides $5 billion in grants over 5 years to support regional, local, and Tribal initiatives to prevent roadway deaths and serious injuries.",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://www.transportation.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.transportation.gov/themes/custom/dot_cms/images/assets/icon-dot-gov.svg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://transportation.house.gov/news/documentsingle.aspx?DocumentID=408626",
+        "title": "Graves, Larsen Release Draft Bill to Dramatically Reform FEMA ...",
+        "snippet": "May 8, 2025 ... Graves \u00b7 Summary of the FEMA Act of 2025 \u00b7 The FEMA Act of 2025 restores FEMA's original status as an independent agency, reporting directly to\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTclxI_cucCDSeleH0l6L5rXS0HiwQXiM74AJtZ5UbxZ9gnXwdB5_ieGPs&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://transportation.house.gov/images/facebook-meta2023.jpg",
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Press Releases | Transportation and Infrastructure Committee",
+                    "og:image:width": "1200",
+                    "twitter:site": "@TransportGOP",
+                    "twitter:site:id": "35829796",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "og:image:height": "630",
+                    "twitter:image": "https://transportation.house.gov/images/facebook-meta2023.jpg",
+                    "twitter:account_id": "35829796"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://transportation.house.gov/images/facebook-meta2023.jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.transportation.gov/BUILDgrants",
+        "title": "Better Utilizing Investments to Leverage Development (BUILD) Grant ...",
+        "snippet": "Jul 16, 2025 ... View the list of FY 2025 and prior year project selections. Program Overview. The U.S. Department of Transportation's (USDOT) Better Utilizing\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKac65dDxz51-RJfXXLqbvcvYU2lTuRDpDH9je-lnCeFGHCC0boQqy5NA&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Better Utilizing Investments to Leverage Development (BUILD) Grant Program",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "BUILD Grant Program",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://www.transportation.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.transportation.gov/themes/custom/dot_cms/images/assets/icon-dot-gov.svg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.fhwa.dot.gov/infrastructure-investment-and-jobs-act/",
+        "title": "Infrastructure Investment and Jobs Act - FHWA | Federal Highway ...",
+        "snippet": "Overview; Funding ... 5/14/2025 - Apportionment of Highway Infrastructure Program Funds Pursuant to the Full-Year Continuing Apportions Act, 2025.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLRSXA74bNvRZF_s_uH_qJ7GsI-IQ7W6ESgAuS_rNrUOKdTWI2u6At6zw&s",
+                    "width": "150",
+                    "height": "150"
+                }
+            ],
+            "metatags": [
+                {
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "msvalidate.01": "44D41FB1AC5699252BC80EEF9FDD7F12"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.fhwa.dot.gov/infrastructure-investment-and-jobs-act/images/safety.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.cantwell.senate.gov/news/press-releases/senators-cantwell-and-grassley-introduce-bipartisan-bill-to-reassert-congressional-trade-role",
+        "title": "Senators Cantwell & Grassley Introduce Bipartisan Bill to Reassert ...",
+        "snippet": "Mar 4, 2025 ... ... bipartisan legislation to reaffirm Congress' key role in setting and approving U.S. trade policy. The Trade Review Act of 2025, modeled\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKpzXPXHQXaKgUEFlPLUL8Da4EhkP7LvRYpsW7SVOmaz3SsQ36kcKZiA7f&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "date": "2025-04-03",
+                    "og:image": "https://www.cantwell.senate.gov/themes/cantwell/images/sharelogo.jpg",
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Senators Cantwell & Grassley Introduce Bipartisan Bill to Reassert Congressional Trade Role",
+                    "viewport": "width=device-width, initial-scale=1",
+                    "twitter:description": "The Official U.S. Senate website of Senator Maria Cantwell of Washington",
+                    "og:title": "Senators Cantwell & Grassley Introduce Bipartisan Bill to Reassert Congressional Trade Role | U.S. Senator Maria Cantwell of Washington",
+                    "title": "Senators Cantwell & Grassley Introduce Bipartisan Bill to Reassert Congressional Trade Role",
+                    "og:url": "https://www.cantwell.senate.gov/news/press-releases/senators-cantwell-and-grassley-introduce-bipartisan-bill-to-reassert-congressional-trade-role",
+                    "og:description": "The Official U.S. Senate website of Senator Maria Cantwell of Washington",
+                    "twitter:image": "https://www.cantwell.senate.gov/themes/cantwell/images/sharelogo.jpg"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.cantwell.senate.gov/themes/cantwell/images/sharelogo.jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.fhwa.dot.gov/infrastructure-investment-and-jobs-act/funding.cfm",
+        "title": "Infrastructure Investment and Jobs Act - Funding | Federal Highway ...",
+        "snippet": "Overview; Funding ... Fiscal Year (FY) 2025 Redistribution of Additional Transportation Infrastructure Finance and Innovation Act (TIFIA) Program Funds\u00a0...",
+        "pagemap": {
+            "metatags": [
+                {
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "msvalidate.01": "44D41FB1AC5699252BC80EEF9FDD7F12"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.usda.gov/sites/default/files/documents/2025-usda-budget-summary.pdf",
+        "title": "United States Department of Agriculture FY 2025 BUDGET SUMMARY",
+        "snippet": "the Bipartisan Budget Act of 2018 eliminated the payment limit for LIP. ... Bipartisan Infrastructure Law (P.L. 117-58) .......................... 945.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZ9ldThbZyd_PEfrvNFV4coKkpOOjPG8WCmOdu3DT6px9lqIT0azN1F3rZ&s",
+                    "width": "272",
+                    "height": "186"
+                }
+            ],
+            "metatags": [
+                {
+                    "moddate": "D:20240312093833-04'00'",
+                    "creationdate": "D:20240312081131-04'00'",
+                    "creator": "Adobe Acrobat Pro (32-bit) 23.8.20555",
+                    "author": "USDA",
+                    "subject": "2025 Budget Summary",
+                    "producer": "Adobe PDF Library 23.8.75",
+                    "title": "2025 Budget Summary"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "x-raw-image:///6d358ab6cb105b3b283c242d8f41b15055af11d2142913e2967d7b02eeb575fd"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.maritime.dot.gov/PIDPgrants",
+        "title": "Port Infrastructure Development Program | MARAD",
+        "snippet": "... Act, 2025 (Pub. L. 119-4, March 15, 2025). Therefore, a total of $500 ... 2022 Bipartisan Infrastructure Law & MARAD Fact Sheet is available here: LINK.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-CHqqOjUFGU3WDi_BrsOHOsn5foz3GV2EbsrzX1Tae13bWJESRdWvz2c&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Port Infrastructure Development Program",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "The Port Infrastructure Development Program (PIDP) is a discretionary grant program administered by the Maritime Administration (MARAD).",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://www.maritime.dot.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.maritime.dot.gov/themes/custom/dot_cms/images/assets/icon-https.svg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.whitehouse.gov/presidential-actions/2025/01/unleashing-american-energy/",
+        "title": "Unleashing American Energy \u2013 The White House",
+        "snippet": "Jan 20, 2025 ... ... Infrastructure Provisions of the Inflation Reduction Act of 2022); and ... January 20, 2025. News \u00b7 Administration \u00b7 Issues \u00b7 Contact \u00b7 EOP.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQbmfbPa50mxQ55gMq1wlWY5PlaJQKhck7mvgRDbmde30MryVjU4twA_16&s",
+                    "width": "311",
+                    "height": "162"
+                }
+            ],
+            "metatags": [
+                {
+                    "application-name": "The White House",
+                    "msapplication-tilecolor": "#0D132D",
+                    "og:image": "https://www.whitehouse.gov/wp-content/uploads/2025/01/WH47-Social-Share-Card-Navy-1200x628-1.png",
+                    "og:type": "article",
+                    "article:published_time": "2025-01-21T01:34:55+00:00",
+                    "og:image:width": "1200",
+                    "twitter:card": "summary_large_image",
+                    "theme-color": "#f5f5f5",
+                    "og:site_name": "The White House",
+                    "og:title": "Unleashing American Energy",
+                    "apple-mobile-web-app-title": "The White House",
+                    "og:image:height": "628",
+                    "og:image:type": "image/png",
+                    "msapplication-tileimage": "/wp-content/images/mstile-144x144.png",
+                    "og:description": "By the authority vested in me as President by the Constitution and the laws of the United States of America, it is hereby ordered:\u00a0 Section 1.",
+                    "twitter:creator": "@whitehouse",
+                    "article:publisher": "https://www.facebook.com/WhiteHouse/",
+                    "twitter:image": "https://www.whitehouse.gov/wp-content/uploads/2025/01/WH47-Social-Share-Card-Navy-1200x628-1.png",
+                    "twitter:site": "@whitehouse",
+                    "article:modified_time": "2025-03-21T15:37:32+00:00",
+                    "viewport": "width=device-width, initial-scale=1",
+                    "og:locale": "en_US",
+                    "og:url": "https://www.whitehouse.gov/presidential-actions/2025/01/unleashing-american-energy/"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.whitehouse.gov/wp-content/uploads/2025/01/WH47-Social-Share-Card-Navy-1200x628-1.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.wicker.senate.gov/2025/4/sens-wicker-bennet-introduce-the-local-infrastructure-act",
+        "title": "Sens. Wicker, Bennet Introduce the LOCAL Infrastructure Act - U.S. ...",
+        "snippet": "Apr 30, 2025 ... ... Infrastructure (LOCAL Infrastructure) Act of 2025. The legislation ... bipartisan bill will support their efforts to revitalize\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcGjAMDeYFagC4CO5ODmbbHo9vm9ApCJAyq99T7LlWSpd_qu4loXyhx_8Z&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://www.wicker.senate.gov/services/images/A81A1FC7-DCA2-4329-9AEC-0E3E6D17803A/social",
+                    "article:published_time": "2025-04-30T00:00:00-04:00",
+                    "article:section": "Press Releases",
+                    "og:type": "article",
+                    "twitter:card": "summary",
+                    "twitter:title": "Sens. Wicker, Bennet Introduce the LOCAL Infrastructure Act",
+                    "og:site_name": "U.S. Senator Roger Wicker",
+                    "node-type": "post",
+                    "datewritten": "2025-04-30T00:00:00",
+                    "og:title": "Sens. Wicker, Bennet Introduce the LOCAL Infrastructure Act",
+                    "twitter:image0": "https://www.wicker.senate.gov/themes/wicker/assets/img/social/default.jpg",
+                    "twitter:image1": "https://www.wicker.senate.gov/services/images/A81A1FC7-DCA2-4329-9AEC-0E3E6D17803A/social",
+                    "type": "press-releases",
+                    "article:modified_time": "2025-04-30T15:33:36-04:00",
+                    "viewport": "width=device-width, initial-scale=1",
+                    "posttype": "press-releases"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.wicker.senate.gov/services/images/A81A1FC7-DCA2-4329-9AEC-0E3E6D17803A/social"
+                }
+            ]
+        }
+    }
+][0m2025-08-22 22:17:47,121 - INFO - Processing request of type CallToolRequest
+2025-08-22 22:17:47,129 - INFO - Executing google_search with query: '2025 bipartisan infrastructure bill legislative history'
+2025-08-22 22:17:47,369 - INFO - Processing request of type ListToolsRequest
+[32;1m[1;3m
+Invoking: `google_search` with `{'query': '2025 bipartisan infrastructure bill legislative history', 'num': 10, 'safe': 'off'}`
+
+
+[0m[36;1m[1;3m[
+    {
+        "url": "https://transportation.house.gov/legislation/coast-guard-authorization-act-of-2025.htm",
+        "title": "Coast Guard Authorization Act of 2025 | Transportation and ...",
+        "snippet": "Introduced by Transportation and Infrastructure Committee Chairman Sam Graves (R-MO), Transportation and Infrastructure Committee Ranking Member Rick Larsen (D-\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTclxI_cucCDSeleH0l6L5rXS0HiwQXiM74AJtZ5UbxZ9gnXwdB5_ieGPs&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://transportation.house.gov/images/facebook-meta2023.jpg",
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Coast Guard Authorization Act of 2025 | Transportation and Infrastructure Committee",
+                    "og:image:width": "1200",
+                    "twitter:site": "@TransportGOP",
+                    "twitter:site:id": "35829796",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "twitter:description": "The United States Coast Guard is one of the six branches of our armed services, the Service responsible for enforcing the nation\u2019s laws on waters under U.S. jurisdiction and on the high seas. The Coast Guard\u2019s many miss...",
+                    "og:image:height": "630",
+                    "og:description": "The United States Coast Guard is one of the six branches of our armed services, the Service responsible for enforcing the nation\u2019s laws on waters under U.S. jurisdiction and on the high seas. The Coast Guard\u2019s many miss...",
+                    "twitter:image": "https://transportation.house.gov/images/facebook-meta2023.jpg",
+                    "twitter:account_id": "35829796"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://transportation.house.gov/images/facebook-meta2023.jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.fhwa.dot.gov/infrastructure-investment-and-jobs-act/",
+        "title": "Infrastructure Investment and Jobs Act - FHWA | Federal Highway ...",
+        "snippet": "5/14/2025 - Apportionment of Highway Infrastructure Program Funds Pursuant to the Full-Year Continuing Apportions Act, 2025. 5/13/2025 - National Performance\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLRSXA74bNvRZF_s_uH_qJ7GsI-IQ7W6ESgAuS_rNrUOKdTWI2u6At6zw&s",
+                    "width": "150",
+                    "height": "150"
+                }
+            ],
+            "metatags": [
+                {
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "msvalidate.01": "44D41FB1AC5699252BC80EEF9FDD7F12"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.fhwa.dot.gov/infrastructure-investment-and-jobs-act/images/safety.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://transportation.house.gov/news/documentsingle.aspx?DocumentID=408626",
+        "title": "Graves, Larsen Release Draft Bill to Dramatically Reform FEMA ...",
+        "snippet": "May 8, 2025 ... Graves and Larsen released a \u201cdiscussion draft\u201d of the Fixing Emergency Management for Americans (FEMA) Act of 2025 to solicit feedback from\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTclxI_cucCDSeleH0l6L5rXS0HiwQXiM74AJtZ5UbxZ9gnXwdB5_ieGPs&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://transportation.house.gov/images/facebook-meta2023.jpg",
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Press Releases | Transportation and Infrastructure Committee",
+                    "og:image:width": "1200",
+                    "twitter:site": "@TransportGOP",
+                    "twitter:site:id": "35829796",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "og:image:height": "630",
+                    "twitter:image": "https://transportation.house.gov/images/facebook-meta2023.jpg",
+                    "twitter:account_id": "35829796"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://transportation.house.gov/images/facebook-meta2023.jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.transportation.gov/grants/SS4A",
+        "title": "Safe Streets and Roads for All (SS4A) Grant Program | US ...",
+        "snippet": "... 2025, at 5:00 p.m. (EDT). More information and applicant guidance is ... Infrastructure Investment and Jobs Act Technical Assistance and Local Support (\u2026",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKac65dDxz51-RJfXXLqbvcvYU2lTuRDpDH9je-lnCeFGHCC0boQqy5NA&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Safe Streets and Roads for All (SS4A) Grant Program",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "The Safe Streets and Roads for All (SS4A) discretionary program provides $5 billion in grants over 5 years to support regional, local, and Tribal initiatives to prevent roadway deaths and serious injuries.",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://www.transportation.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.transportation.gov/themes/custom/dot_cms/images/assets/icon-dot-gov.svg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "http://miller.house.gov/media/press-releases/miller-schneider-introduce-resilience-act-2025",
+        "title": "Miller, Schneider Introduce the RESILIENCE Act of 2025 ...",
+        "snippet": "Apr 10, 2025 ... ... Infrastructure, Labor Investment, Energy Needs, and Creates Equity Act of 2025 (RESILIENCE Act of 2025). This bipartisan legislation will\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiKRSAiCjuUUdduWYUoG7wqkJd0QWlSgobJFWJBbuNEg-yh1SG-lFarTM&s",
+                    "width": "295",
+                    "height": "171"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:type": "article",
+                    "article:published_time": "2025-04-10T12:03:00-04:00",
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Miller, Schneider Introduce the RESILIENCE Act of 2025 | Congresswoman Carol Miller",
+                    "og:site_name": "Congresswoman Carol Miller",
+                    "handheldfriendly": "true",
+                    "og:title": "Miller, Schneider Introduce the RESILIENCE Act of 2025",
+                    "og:updated_time": "2025-04-11T16:30:25-04:00",
+                    "og:description": "Washington, D.C.\u00a0\u2013\u00a0Today, Congresswoman Carol Miller (R-WV) and Congressman Brad Schneider (D-IL) introduced the Repair Expenditures Support Infrastructure, Labor Investment, Energy Needs, and Creates Equity Act of 2025 (RESILIENCE Act of 2025). This bipartisan legislation will allow utilities to deduct repair costs from the Corporate Alternative Minimum Tax and will ensure that these companies are treated fairly.\u00a0",
+                    "twitter:image": "https://miller.house.gov/profiles/evo/assets/images/Seal_of_the_United_States_House_of_Representatives.png",
+                    "article:modified_time": "2025-04-11T16:30:25-04:00",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "mobileoptimized": "width",
+                    "og:url": "http://miller.house.gov/media/press-releases/miller-schneider-introduce-resilience-act-2025"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://miller.house.gov/sites/evo-subsites/miller.house.gov/files/logo-new_13.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.wicker.senate.gov/2025/4/sens-wicker-bennet-introduce-the-local-infrastructure-act",
+        "title": "Sens. Wicker, Bennet Introduce the LOCAL Infrastructure Act - U.S. ...",
+        "snippet": "Apr 30, 2025 ... ... Infrastructure (LOCAL Infrastructure) Act of 2025. The legislation ... bipartisan leadership and urge swift passage of this legislation.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcGjAMDeYFagC4CO5ODmbbHo9vm9ApCJAyq99T7LlWSpd_qu4loXyhx_8Z&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://www.wicker.senate.gov/services/images/A81A1FC7-DCA2-4329-9AEC-0E3E6D17803A/social",
+                    "article:published_time": "2025-04-30T00:00:00-04:00",
+                    "article:section": "Press Releases",
+                    "og:type": "article",
+                    "twitter:card": "summary",
+                    "twitter:title": "Sens. Wicker, Bennet Introduce the LOCAL Infrastructure Act",
+                    "og:site_name": "U.S. Senator Roger Wicker",
+                    "node-type": "post",
+                    "datewritten": "2025-04-30T00:00:00",
+                    "og:title": "Sens. Wicker, Bennet Introduce the LOCAL Infrastructure Act",
+                    "twitter:image0": "https://www.wicker.senate.gov/themes/wicker/assets/img/social/default.jpg",
+                    "twitter:image1": "https://www.wicker.senate.gov/services/images/A81A1FC7-DCA2-4329-9AEC-0E3E6D17803A/social",
+                    "type": "press-releases",
+                    "article:modified_time": "2025-04-30T15:33:36-04:00",
+                    "viewport": "width=device-width, initial-scale=1",
+                    "posttype": "press-releases"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.wicker.senate.gov/services/images/A81A1FC7-DCA2-4329-9AEC-0E3E6D17803A/social"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.whitehouse.gov/presidential-actions/2025/01/unleashing-american-energy/",
+        "title": "Unleashing American Energy \u2013 The White House",
+        "snippet": "Jan 20, 2025 ... ... Infrastructure Provisions of the Inflation Reduction Act of 2022); and. (xii) Executive Order 14096 of April 21, 2023 (Revitalizing Our\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQbmfbPa50mxQ55gMq1wlWY5PlaJQKhck7mvgRDbmde30MryVjU4twA_16&s",
+                    "width": "311",
+                    "height": "162"
+                }
+            ],
+            "metatags": [
+                {
+                    "application-name": "The White House",
+                    "msapplication-tilecolor": "#0D132D",
+                    "og:image": "https://www.whitehouse.gov/wp-content/uploads/2025/01/WH47-Social-Share-Card-Navy-1200x628-1.png",
+                    "og:type": "article",
+                    "article:published_time": "2025-01-21T01:34:55+00:00",
+                    "og:image:width": "1200",
+                    "twitter:card": "summary_large_image",
+                    "theme-color": "#f5f5f5",
+                    "og:site_name": "The White House",
+                    "og:title": "Unleashing American Energy",
+                    "apple-mobile-web-app-title": "The White House",
+                    "og:image:height": "628",
+                    "og:image:type": "image/png",
+                    "msapplication-tileimage": "/wp-content/images/mstile-144x144.png",
+                    "og:description": "By the authority vested in me as President by the Constitution and the laws of the United States of America, it is hereby ordered:\u00a0 Section 1.",
+                    "twitter:creator": "@whitehouse",
+                    "article:publisher": "https://www.facebook.com/WhiteHouse/",
+                    "twitter:image": "https://www.whitehouse.gov/wp-content/uploads/2025/01/WH47-Social-Share-Card-Navy-1200x628-1.png",
+                    "twitter:site": "@whitehouse",
+                    "article:modified_time": "2025-03-21T15:37:32+00:00",
+                    "viewport": "width=device-width, initial-scale=1",
+                    "og:locale": "en_US",
+                    "og:url": "https://www.whitehouse.gov/presidential-actions/2025/01/unleashing-american-energy/"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.whitehouse.gov/wp-content/uploads/2025/01/WH47-Social-Share-Card-Navy-1200x628-1.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://fitzpatrick.house.gov/2025/5/fitzpatrick-carbajal-s-market-choice-act-charts-bold-path-for-u-s-climate-leadership-and-infrastructure-renewal",
+        "title": "Fitzpatrick & Carbajal's MARKET CHOICE Act Charts Bold Path for ...",
+        "snippet": "May 14, 2025 ... A landmark bipartisan bill that puts market forces to work to cut emissions, modernize national infrastructure, and secure America's economic and environmental\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdfAf-nSmgI6khLfAWYfgcDBZHUEwDK5aMQWRgMvQsUBvovZA3KfS7VXk&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "date": "2025-05-14 00:00:00.0",
+                    "og:image": "https://fitzpatrick.house.gov/vendor/_accounts/brianfitzpatrick/_skins/hathaway/images/twitter-card-brian-fitzpatrick.png",
+                    "og:type": "article",
+                    "article:section": "Press Release",
+                    "article:published_time": "2025-05-14T04:00:00Z",
+                    "twitter:title": "Fitzpatrick & Carbajal\u2019s MARKET CHOICE Act Charts Bold Path for U.S. Climate Leadership and Infrastructure Renewal",
+                    "twitter:card": "summary_large_image",
+                    "og:site_name": "Congressman Brian Fitzpatrick",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "og:title": "Fitzpatrick & Carbajal\u2019s MARKET CHOICE Act Charts Bold Path for U.S. Climate Leadership and Infrastructure Renewal",
+                    "og:url": "https://fitzpatrick.house.gov/2025/5/fitzpatrick-carbajal-s-market-choice-act-charts-bold-path-for-u-s-climate-leadership-and-infrastructure-renewal",
+                    "twitter:image": "https://fitzpatrick.house.gov/vendor/_accounts/brianfitzpatrick/_skins/hathaway/images/twitter-card-brian-fitzpatrick.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://fitzpatrick.house.gov/vendor/_accounts/brianfitzpatrick/_skins/hathaway/images/twitter-card-brian-fitzpatrick.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://bipartisanpolicy.org/",
+        "title": "Bipartisan Policy Center",
+        "snippet": "The Latest in Bipartisanship ... What's in the ROAD to Housing Act of 2025? ... How Does the 2025 Tax Law Change the SALT Deduction? ... How Much Are U.S. Tariffs\u00a0...",
+        "pagemap": {
+            "metatags": [
+                {
+                    "referrer": "no-referrer-when-downgrade",
+                    "ix:usehttps": "true",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "ix:host": "bipartisan-policy-center.imgix.net",
+                    "og:title": "Bipartisan Policy Center",
+                    "og:url": "https://bipartisanpolicy.org/"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.transit.dot.gov/IIJA",
+        "title": "The Infrastructure Investment and Jobs Act | FTA",
+        "snippet": "Mar 31, 2025 ... The Infrastructure Investment and Jobs Act (IIJA) authorizes up to $108 billion for public transportation \u2013 the largest federal investment\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQp4g6u0xyBkawExcE7cMX5T1c5PQAKgU9g_fL4LL3ZsHy0wTmZY3aOKCGC&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "The Infrastructure Investment and Jobs Act",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "The Infrastructure Investment and Jobs Act (IIJA) authorizes up to $108 billion for public transportation \u2013 the largest federal investment in public transportation in the nation\u2019s history\u00a0\u2013 through 2026.",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://www.transit.dot.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.transit.dot.gov/themes/custom/dot_cms/images/assets/icon-dot-gov.svg"
+                }
+            ]
+        }
+    }
+][0m2025-08-22 22:17:53,831 - INFO - Processing request of type CallToolRequest
+2025-08-22 22:17:53,839 - INFO - Executing google_search with query: '2025 bipartisan infrastructure bill budget allocations'
+2025-08-22 22:17:54,059 - INFO - Processing request of type ListToolsRequest
+[32;1m[1;3m
+Invoking: `google_search` with `{'query': '2025 bipartisan infrastructure bill budget allocations', 'num': 10, 'safe': 'off'}`
+
+
+[0m[36;1m[1;3m[
+    {
+        "url": "https://www.usda.gov/sites/default/files/documents/2025-usda-budget-summary.pdf",
+        "title": "United States Department of Agriculture FY 2025 BUDGET SUMMARY",
+        "snippet": "Bipartisan Infrastructure Law (P.L. 117-58) ... Division O of the Consolidated Appropriations Act of 2018 (P.L. 115-141) provided new budget.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZ9ldThbZyd_PEfrvNFV4coKkpOOjPG8WCmOdu3DT6px9lqIT0azN1F3rZ&s",
+                    "width": "272",
+                    "height": "186"
+                }
+            ],
+            "metatags": [
+                {
+                    "moddate": "D:20240312093833-04'00'",
+                    "creationdate": "D:20240312081131-04'00'",
+                    "creator": "Adobe Acrobat Pro (32-bit) 23.8.20555",
+                    "author": "USDA",
+                    "subject": "2025 Budget Summary",
+                    "producer": "Adobe PDF Library 23.8.75",
+                    "title": "2025 Budget Summary"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "x-raw-image:///6d358ab6cb105b3b283c242d8f41b15055af11d2142913e2967d7b02eeb575fd"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.whitehouse.gov/wp-content/uploads/2024/03/budget_fy2025.pdf",
+        "title": "Budget of the United States Government, Fiscal Year 2025",
+        "snippet": "Reduction Act and Bipartisan Infrastructure Law investments to ensure long-term success in ... in advance appropriations provided by the Bipartisan Infrastructure\u00a0...",
+        "pagemap": {
+            "metatags": [
+                {
+                    "moddate": "D:20240308152648-05'00'",
+                    "creationdate": "D:20240308135653-05'00'",
+                    "creator": "Adobe InDesign 19.2 (Windows)",
+                    "author": "Office of Management and Budget",
+                    "producer": "Adobe PDF Library 17.0",
+                    "title": "Budget of the United States Government, Fiscal Year 2025"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.transportation.gov/mission/budget/infrastructure-investment-and-jobs-act-iija-funding-status",
+        "title": "Infrastructure Investment and Jobs Act (IIJA) Funding Status | US ...",
+        "snippet": "Enacted Budget Authority with Adjustments. Grants Announced [non-add]. Obligations. Outlays. % Obligated. % Outlayed. June 30, 2025 ... allocated to grant\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKac65dDxz51-RJfXXLqbvcvYU2lTuRDpDH9je-lnCeFGHCC0boQqy5NA&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Infrastructure Investment and Jobs Act (IIJA) Funding Status",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "IIJA Funding Status as of June 30, 2025\u00a0\u2013\u00a0",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://www.transportation.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.transportation.gov/themes/custom/dot_cms/images/assets/icon-dot-gov.svg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.whitehouse.gov/wp-content/uploads/2025/05/Fiscal-Year-2026-Discretionary-Budget-Request.pdf",
+        "title": "Fiscal-Year-2026-Discretionary-Budget-Request.pdf",
+        "snippet": "May 2, 2025 ... Infrastructure Investment and Jobs Act ... appropriations enacted in the Full-Year Continuing Appropriations Act, 2025 (division A.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa-z1q6e7p7jwqBuhpo3vKi-rZvJUvuDwNvdZy_B4olb2rbGZx77lFMDs4&s",
+                    "width": "197",
+                    "height": "255"
+                }
+            ],
+            "metatags": [
+                {
+                    "moddate": "D:20250502093614-04'00'",
+                    "creationdate": "D:20250502075516-04'00'",
+                    "producer": "Adobe Acrobat Pro (64-bit) 25 Paper Capture Plug-in"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "x-raw-image:///61e6cc8a88baaab00b33a2b806259712a9166169dd958f57d0fa754a79fc45e7"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.transit.dot.gov/funding/apportionments/current-apportionments",
+        "title": "Current Apportionments | FTA",
+        "snippet": "... Appropriations and Extensions Act, 2025. Formula grant programs allocate funding to states, urbanized areas, and transit agencies based on formulas set by\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQp4g6u0xyBkawExcE7cMX5T1c5PQAKgU9g_fL4LL3ZsHy0wTmZY3aOKCGC&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Current Apportionments",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "What's New On May 5, 2025, FTA announced the availability of Fiscal Year (FY) 2025 full-year funding detailed in apportionment tables that specify funding to states, urbanized areas, and Tribal governments based on statutory formulas.\u00a0",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://www.transit.dot.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.transit.dot.gov/themes/custom/dot_cms/images/assets/icon-dot-gov.svg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://doa.wi.gov/budget/SBO/2025-27%20Budget%20in%20Brief%20UEK.pdf",
+        "title": "2025-27 Budget in Brief",
+        "snippet": "$148 million in federal broadband infrastructure grant funding allocated to Wisconsin by the CARES Act and the American Rescue Plan Act, supporting 125\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyFeIruzbMDUD0oxGu7vVZM1MOfRQk4R3gaZu4yejUP6nh1iT0KJjk0lF7&s",
+                    "width": "222",
+                    "height": "227"
+                }
+            ],
+            "metatags": [
+                {
+                    "moddate": "D:20250221091805-06'00'",
+                    "creationdate": "D:20250221091330-06'00'",
+                    "creator": "Acrobat PDFMaker 24 for Word",
+                    "author": "Tappen, Gail A - DOA",
+                    "producer": "Adobe Acrobat Pro (32-bit) 24.5.20399"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "x-raw-image:///ff11448f67e6f47fcd4c4cb41f6d13f86245708bce9da18feb10549c299af56e"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/14/text",
+        "title": "Text - H.Con.Res.14 - 119th Congress (2025-2026): Establishing the ...",
+        "snippet": "Text for H.Con.Res.14 - 119th Congress (2025-2026): Establishing the congressional budget for the United States Government for fiscal year 2025 and setting\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvf77cCsGgrae9jy5WU0Gxo7NtvKOaxuMhg2aY1P8jQTmTDhDtRt1tong&s",
+                    "width": "310",
+                    "height": "163"
+                }
+            ],
+            "metatags": [
+                {
+                    "dc.congress": "119th Cong.",
+                    "og:image": "https://www.congress.gov/img/opengraph1200by630.jpg",
+                    "og:type": "website",
+                    "dc.coverage": "2025-02-18",
+                    "og:title": "Text - H.Con.Res.14 - 119th Congress (2025-2026): Establishing the congressional budget for the United States Government for fiscal year 2025 and setting forth the appropriate budgetary levels for fiscal years 2026 through 2034.",
+                    "dc.rights": "Text is government work",
+                    "dc.date": "05/20/2025",
+                    "og:description": "Text for H.Con.Res.14 - 119th Congress (2025-2026): Establishing the congressional budget for the United States Government for fiscal year 2025 and setting forth the appropriate budgetary levels for fiscal years 2026 through 2034.",
+                    "dc.type": "legislation",
+                    "viewport": "width=device-width,initial-scale=1",
+                    "dc.creator": "Rep. Arrington, Jodey C. [R-TX-19]",
+                    "dc.title": "Text - H.Con.Res.14 - 119th Congress (2025-2026): Establishing the congressional budget for the United States Government for fiscal year 2025 and setting forth the appropriate budgetary levels for fiscal years 2026 through 2034.",
+                    "dc.identifier": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/14/text",
+                    "dc.subject": "Legislative Data",
+                    "dc.language": "eng",
+                    "og:url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/14/text",
+                    "dc.number": "H.Con.Res.14"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.congress.gov/img/opengraph1200by630.jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.fhwa.dot.gov/infrastructure-investment-and-jobs-act/funding.cfm",
+        "title": "Infrastructure Investment and Jobs Act - Funding | Federal Highway ...",
+        "snippet": "Fiscal Year (FY) 2025 Redistribution of Additional Transportation Infrastructure Finance and Innovation Act (TIFIA) Program Funds. Non-apportioned Formula\u00a0...",
+        "pagemap": {
+            "metatags": [
+                {
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "msvalidate.01": "44D41FB1AC5699252BC80EEF9FDD7F12"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://highways.dot.gov/newsroom/investing-america-biden-harris-administration-sends-62-billion-states-bipartisan",
+        "title": "INVESTING IN AMERICA: Biden-Harris Administration Sends $62 ...",
+        "snippet": "Oct 1, 2024 ... The fourth year of funding under the Bipartisan Infrastructure Law provides $62 billion in funding for Fiscal Year 2025 \u2013 an increase of $18.8\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ57BCQadEcBHcKptNn7kA58oc5E11AQ8WAXG6xdQlwI0VbfNemajipyu23&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "INVESTING IN AMERICA: Biden-Harris Administration Sends $62 Billion to States from the Bipartisan Infrastructure Law for America\u2019s Infrastructure",
+                    "twitter:site": "@USDOT",
+                    "handheldfriendly": "true",
+                    "viewport": "width=device-width, initial-scale=1, shrink-to-fit=no",
+                    "twitter:description": "The fourth year of funding under President Biden\u2019s Bipartisan Infrastructure Law provides funding to all 50 States, the District of Columbia, and Puerto Rico for infrastructure improvements",
+                    "mobileoptimized": "width",
+                    "twitter:creator": "@USDOT",
+                    "twitter:image": "https://highways.dot.gov/themes/custom/dot_cms/images/seal_dot.png"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://highways.dot.gov/themes/custom/dot_cms/images/assets/icon-dot-gov.svg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://ebudget.ca.gov/FullBudgetSummary.pdf",
+        "title": "2025-26 Enactment Budget Summary",
+        "snippet": "To provide a balanced budget over two fiscal years, the 2024 Budget Act authorized withdrawals from the Budget Stabilization Account (BSA) of $5.1 billion in\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqphlR-O9IYyEdZb6QVrTx5-gZaEz38YbEkYQ40XMNfSgRJzF3z7iEaR8&s",
+                    "width": "197",
+                    "height": "255"
+                }
+            ],
+            "metatags": [
+                {
+                    "moddate": "D:20250711141928-07'00'",
+                    "creationdate": "D:20250711132034-07'00'",
+                    "producer": "Prince 15.4.1 (www.princexml.com)",
+                    "title": "2025-26 Enactment Budget Summary"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "x-raw-image:///171db1812b47222e7896ca74b65aed3467e6d8bb814631dc5fdcd9d4874b96cc"
+                }
+            ]
+        }
+    }
+][0m2025-08-22 22:18:03,308 - INFO - Processing request of type CallToolRequest
+2025-08-22 22:18:03,315 - INFO - Executing google_search with query: 'Clean Energy Transition Act 2024 legislation'
+2025-08-22 22:18:03,654 - INFO - Processing request of type ListToolsRequest
+[32;1m[1;3m
+Invoking: `google_search` with `{'query': 'Clean Energy Transition Act 2024 legislation', 'num': 10, 'safe': 'off'}`
+
+
+[0m[36;1m[1;3m[
+    {
+        "url": "https://www.commerce.wa.gov/energy-policy/electricity-policy/ceta/",
+        "title": "Clean Energy Transformation Act (CETA) \u2013 Washington State ...",
+        "snippet": "On May 7, 2019, Governor Jay Inslee signed the Clean Energy Transformation Act (CETA) (SB 5116, 2019) into law, which commits Washington to an electricity\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0yWu3Lxir_3i8FyaGcgY-p6gis99OluiVyJ8Ho4mM8oYAE6un0qpxg6w&s",
+                    "width": "385",
+                    "height": "131"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://www.commerce.wa.gov/wp-content/uploads/2021/05/AdobeStock_383351528-e1712867486600-1024x348.jpg",
+                    "og:type": "website",
+                    "og:image:width": "640",
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Clean Energy Transformation Act (CETA)",
+                    "og:site_name": "Washington State Department of Commerce",
+                    "og:title": "Clean Energy Transformation Act (CETA)",
+                    "og:image:height": "218",
+                    "msapplication-tileimage": "https://www.commerce.wa.gov/wp-content/uploads/2024/02/cropped-Group-86-270x270.png",
+                    "og:image:secure_url": "https://www.commerce.wa.gov/wp-content/uploads/2021/05/AdobeStock_383351528-e1712867486600-1024x348.jpg",
+                    "twitter:image": "https://www.commerce.wa.gov/wp-content/uploads/2021/05/AdobeStock_383351528-e1712867486600-1024x348.jpg",
+                    "viewport": "width=device-width, initial-scale=1",
+                    "og:locale": "en_US",
+                    "og:url": "https://www.commerce.wa.gov/energy-policy/electricity-policy/ceta/"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.commerce.wa.gov/wp-content/uploads/2021/05/AdobeStock_383351528-e1712867486600-1024x348.jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.mass.gov/news/governor-healey-signs-climate-law-to-advance-clean-energy-transition-create-jobs-and-lower-costs",
+        "title": "Governor Healey Signs Climate Law to Advance Clean Energy ...",
+        "snippet": "Press Release Governor Healey Signs Climate Law to Advance Clean ... For immediate release: 11/21/2024. Governor Maura Healey and Lt. Governor Kim Driscoll\u00a0...",
+        "pagemap": {
+            "metatags": [
+                {
+                    "mg_title": "Governor Healey Signs Climate Law to Advance Clean Energy Transition, Create Jobs and Lower Costs",
+                    "og:type": "article",
+                    "twitter:card": "summary_large_image",
+                    "twitter:title": "Governor Healey Signs Climate Law to Advance Clean Energy Transition, Create Jobs and Lower Costs",
+                    "og:site_name": "Mass.gov",
+                    "twitter:site:id": "16264003",
+                    "mg_body_preview": "Historic reforms to how clean energy is permitted will accelerate progress toward climate goals and ensure siting is informed by environmental justice",
+                    "mg_type": "press-release",
+                    "handheldfriendly": "true",
+                    "twitter:url": "https://www.mass.gov/news/governor-healey-signs-climate-law-to-advance-clean-energy-transition-create-jobs-and-lower-costs",
+                    "og:title": "Governor Healey Signs Climate Law to Advance Clean Energy Transition, Create Jobs and Lower Costs",
+                    "mg_date": "20241121",
+                    "og:description": "Historic reforms to how clean energy is permitted will accelerate progress toward climate goals and ensure siting is informed by environmental justice",
+                    "mg_url": "https://www.mass.gov/news/governor-healey-signs-climate-law-to-advance-clean-energy-transition-create-jobs-and-lower-costs",
+                    "twitter:site": "@massgov",
+                    "mg_organization": "governormaurahealeyandltgovernorkimdriscoll,executiveofficeofenergyandenvironmentalaffairs,officeofclimateinnovationandresilience",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "twitter:description": "Historic reforms to how clean energy is permitted will accelerate progress toward climate goals and ensure siting is informed by environmental justice",
+                    "mobileoptimized": "width",
+                    "og:url": "https://www.mass.gov/news/governor-healey-signs-climate-law-to-advance-clean-energy-transition-create-jobs-and-lower-costs",
+                    "category": "news"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.governor.state.nm.us/2019/03/22/governor-signs-landmark-energy-legislation-establishing-new-mexico-as-a-national-leader-in-renewable-transition-efforts/",
+        "title": "Governor signs landmark energy legislation, establishing New ...",
+        "snippet": "Mar 22, 2019 ... Gov. Michelle Lujan Grisham on Friday signed Senate Bill 489, the Energy Transition Act, landmark legislation that sets bold statewide renewable energy\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc5_4LWtyrxI5Aieu-9SSqPP8SFpv2ynuwK75dSgrzh-Qut_lM8nO38wA&s",
+                    "width": "183",
+                    "height": "275"
+                }
+            ],
+            "BreadcrumbList": [
+                {}
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://www.governor.state.nm.us/wp-content/uploads/2019/01/Governor-Michelle-Lujan-Grisham.jpg",
+                    "og:type": "article",
+                    "article:published_time": "2019-03-22T23:33:47+00:00",
+                    "og:image:width": "600",
+                    "twitter:card": "summary_large_image",
+                    "og:site_name": "Office of the Governor - Michelle Lujan Grisham",
+                    "author": "Lauren Thorp",
+                    "og:title": "Governor signs landmark energy legislation, establishing New Mexico as a national leader in renewable transition efforts - Office of the Governor - Michelle Lujan Grisham",
+                    "og:image:height": "900",
+                    "twitter:label1": "Written by",
+                    "twitter:label2": "Est. reading time",
+                    "og:image:type": "image/jpeg",
+                    "msapplication-tileimage": "https://www.governor.state.nm.us/wp-content/uploads/2018/12/cropped-stateSeal-270x270.png",
+                    "twitter:creator": "@GovMLG",
+                    "article:publisher": "https://www.facebook.com/GovMLG/",
+                    "twitter:data1": "Lauren Thorp",
+                    "twitter:data2": "5 minutes",
+                    "twitter:site": "@GovMLG",
+                    "article:modified_time": "2019-03-22T23:33:49+00:00",
+                    "viewport": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0",
+                    "og:locale": "en_US",
+                    "name": "Home",
+                    "position": "1",
+                    "og:url": "https://www.governor.state.nm.us/2019/03/22/governor-signs-landmark-energy-legislation-establishing-new-mexico-as-a-national-leader-in-renewable-transition-efforts/"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.governor.state.nm.us/wp-content/uploads/2019/01/Governor-Michelle-Lujan-Grisham.jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.dws.state.nm.us/ETA",
+        "title": "Energy Transition Act",
+        "snippet": "The law transitions New Mexico away from coal and toward clean energy, ensuring greater renewable energy production and reducing costs for consumers.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqOliPjpAaTkPv3n8E6J651GqFM_EPeBkcDAjQfDMU3h8mXaqNndSnvgw&s",
+                    "width": "175",
+                    "height": "84"
+                }
+            ],
+            "metatags": [
+                {
+                    "viewport": "width=device-width, initial-scale=1"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.dws.state.nm.us/Portals/0/NMDWSlogoWeb.png?ver=v9ymKyXtTqSPxA-yM_5pvw%3D%3D"
+                }
+            ],
+            "listitem": [
+                {
+                    "item": "Energy Transition Act",
+                    "name": "Energy Transition Act",
+                    "position": "1"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.nysenate.gov/legislation/bills/2023/S2935/amendment/C",
+        "title": "NY State Senate Bill 2023-S2935C",
+        "snippet": "Senate Bill S2935C. 2023-2024 Legislative Session. Enacts the \"just energy transition act ... renewable sources for the downstate electricity system key to\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK97v_bh3YJh8A_BdOCv6Ne3EKE1gLeq0brOV74T57PfGvB23Iyo344A3Q&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://www.nysenate.gov/themes/custom/nysenate_theme/src/assets/nysenate_bill_share.png",
+                    "og:type": "article",
+                    "og:image:width": "1280",
+                    "twitter:card": "summary",
+                    "twitter:title": "NY State Senate Bill 2023-S2935C",
+                    "og:site_name": "NYSenate.gov",
+                    "handheldfriendly": "true",
+                    "og:title": "NY State Senate Bill 2023-S2935C",
+                    "og:image:height": "510",
+                    "og:description": "Enacts the \"just energy transition act\"; requires a study of competitive options to facilitate the phase-out, replacement and redevelopment of New York state's oldest and most-polluting fossil fueled generation facilities and their sites by the year 2030.",
+                    "twitter:image": "https://www.nysenate.gov/themes/custom/nysenate_theme/src/assets/nysenate_bill_share.png",
+                    "fb:app_id": "1567632026803489",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "twitter:description": "Enacts the \"just energy transition act\"; requires a study of competitive options to facilitate the phase-out, replacement and redevelopment of New York state's oldest and most-polluting fossil fueled generation facilities and their sites by the year 2030.",
+                    "mobileoptimized": "width",
+                    "og:url": "https://www.nysenate.gov/legislation/bills/2023/S2935/amendment/C"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.nysenate.gov/themes/custom/nysenate_theme/src/assets/nysenate_bill_share.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://cvnm.org/the-energy-transition-act-eta-myths-facts/",
+        "title": "The Energy Transition Act (ETA) \u2013 Myths & Facts \u2013 Conservation ...",
+        "snippet": "Jan 19, 2021 ... ... transition legislation that was passed into law in 2019. Thanks to ... The Energy Transition Act requires 50% renewable energy in New\u00a0...",
+        "pagemap": {
+            "metatags": [
+                {
+                    "viewport": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
+                    "msapplication-tileimage": "https://cvnm.org/wp-content/uploads/2021/11/cropped-CVNM-Logo-R3-2-270x270.png"
+                }
+            ],
+            "hatomfeed": [
+                {}
+            ]
+        }
+    },
+    {
+        "url": "https://www.nysenate.gov/legislation/bills/2023/A4866/amendment/C",
+        "title": "NY State Assembly Bill 2023-A4866C",
+        "snippet": "Assembly Bill A4866C. 2023-2024 Legislative Session. Enacts the \"just energy transition act\". download bill text pdf. Share this bill. Sponsored By. KELLES\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK97v_bh3YJh8A_BdOCv6Ne3EKE1gLeq0brOV74T57PfGvB23Iyo344A3Q&s",
+                    "width": "225",
+                    "height": "225"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://www.nysenate.gov/themes/custom/nysenate_theme/src/assets/nysenate_bill_share.png",
+                    "og:type": "article",
+                    "og:image:width": "1280",
+                    "twitter:card": "summary",
+                    "twitter:title": "NY State Assembly Bill 2023-A4866C",
+                    "og:site_name": "NYSenate.gov",
+                    "handheldfriendly": "true",
+                    "og:title": "NY State Assembly Bill 2023-A4866C",
+                    "og:image:height": "510",
+                    "og:description": "Enacts the \"just energy transition act\"; creates the just energy transition task force; requires a study of competitive options to facilitate the phase-out, replacement and redevelopment of New York state's oldest and most-polluting fossil-fueled power generation facilities and their sites by the year 2040.",
+                    "twitter:image": "https://www.nysenate.gov/themes/custom/nysenate_theme/src/assets/nysenate_bill_share.png",
+                    "fb:app_id": "1567632026803489",
+                    "viewport": "width=device-width, initial-scale=1.0",
+                    "twitter:description": "Enacts the \"just energy transition act\"; creates the just energy transition task force; requires a study of competitive options to facilitate the phase-out, replacement and redevelopment of New York state's oldest and most-polluting fossil-fueled power generation facilities and their sites by the year 2040.",
+                    "mobileoptimized": "width",
+                    "og:url": "https://www.nysenate.gov/legislation/bills/2023/A4866/amendment/C"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.nysenate.gov/themes/custom/nysenate_theme/src/assets/nysenate_bill_share.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.iad.nm.gov/programs-and-funding/energy-transition-act/",
+        "title": "Energy Transition Act - NM Indian Affairs Department",
+        "snippet": "The law transitions New Mexico away from coal and toward clean energy, ensuring greater renewable energy production and reducing costs for consumers.",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQtdW0kwUFvz8OgCZBpJN7ClGFjkLdrKS1LEHd2qUTMJAKapWgh4zTRJI&s",
+                    "width": "366",
+                    "height": "138"
+                }
+            ],
+            "BreadcrumbList": [
+                {}
+            ],
+            "metatags": [
+                {
+                    "og:type": "article",
+                    "twitter:card": "summary_large_image",
+                    "og:site_name": "NM Indian Affairs Department",
+                    "tec-api-origin": "https://www.iad.nm.gov",
+                    "og:title": "Energy Transition Act - NM Indian Affairs Department",
+                    "twitter:label1": "Est. reading time",
+                    "msapplication-tileimage": "https://www.iad.nm.gov/wp-content/uploads/2019/10/cropped-NMIAD-logomark-270x270.png",
+                    "og:description": "Explore the Energy Transition Act (ETA), a landmark legislation positioning New Mexico as a frontrunner in clean energy. Developed through a year-long collaboration among community organizations, unions, and energy advocates, the ETA sets ambitious renewable energy standards. By 2030, New Mexico aims for 50% renewable energy and 80% by 2040, transitioning away from coal toward clean energy sources. This initiative not only promotes renewable energy production but also reduces costs for consumers while providing economic support for impacted communities and fostering workforce development. Join us in shaping a sustainable future.",
+                    "twitter:data1": "1 minute",
+                    "article:modified_time": "2025-01-29T17:00:30+00:00",
+                    "viewport": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0",
+                    "og:locale": "en_US",
+                    "name": "Home",
+                    "position": "1",
+                    "og:url": "https://www.iad.nm.gov/programs-and-funding/energy-transition-act/",
+                    "tec-api-version": "v1"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.iad.nm.gov/wp-content/uploads/2019/10/NMIAD-logo-reverse.png"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.cleanenergytransition.org/post/washington-2024-legislative-session-clean-energy-policies-wrap-up",
+        "title": "Washington 2024 Legislative Session Clean Energy Policies Wrap-Up",
+        "snippet": "Apr 25, 2024 ... HB 1589 aims to support Washington's largest utility\u2013Puget Sound Electric (PSE)\u2013with meeting the Washington's Clean Energy Transformation Act\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQq7vlJoe3iC_TFJZdGemMa7EvWThETm7vOcEP_Q2u5NLVRmvjyUIVCxfqe&s",
+                    "width": "300",
+                    "height": "168"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://cdn.prod.website-files.com/5d8aa5c4ff027473b00c1516/662aa0876e1050d3044408b3_AdobeStock_92260517%20(1).jpg",
+                    "twitter:title": "Washington 2024 Legislative Session Clean Energy Policies Wrap-Up",
+                    "og:type": "website",
+                    "twitter:card": "summary_large_image",
+                    "viewport": "width=device-width, initial-scale=1",
+                    "twitter:description": "CETI breaks down what clean energy legislation and budget proposals made it over the finish line in Washington's 2024 Legislative Session.",
+                    "og:title": "Washington 2024 Legislative Session Clean Energy Policies Wrap-Up",
+                    "og:description": "CETI breaks down what clean energy legislation and budget proposals made it over the finish line in Washington's 2024 Legislative Session.",
+                    "twitter:image": "https://cdn.prod.website-files.com/5d8aa5c4ff027473b00c1516/662aa0876e1050d3044408b3_AdobeStock_92260517%20(1).jpg"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://cdn.prod.website-files.com/5d8aa5c4ff027473b00c1516/662aa0876e1050d3044408b3_AdobeStock_92260517%20(1).jpg"
+                }
+            ]
+        }
+    },
+    {
+        "url": "https://www.bennet.senate.gov/2024/09/12/press-releases-id-7f72cc19-6774-420d-afe1-b845edfd6097/",
+        "title": "Bennet, Brown, Bicameral Colleagues Introduce Bill to Support ...",
+        "snippet": "Sep 12, 2024 ... Bennet, Brown, Bicameral Colleagues Introduce Bill to Support Fossil Fuel Workers Amid Clean Energy Transition ... Washington, D.C. \u2014 Colorado\u00a0...",
+        "pagemap": {
+            "cse_thumbnail": [
+                {
+                    "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUbbQQFfL99vdSzWdhMAUTiPhKjAQAvEaO6IMHNtb4cI4OXj5oHCVxwpU&s",
+                    "width": "294",
+                    "height": "171"
+                }
+            ],
+            "metatags": [
+                {
+                    "og:image": "https://www.bennet.senate.gov/wp-content/uploads/2024/08/bennet-walking.jpg",
+                    "og:type": "article",
+                    "article:published_time": "2024-09-12T00:00:00+00:00",
+                    "og:image:width": "2400",
+                    "twitter:card": "summary_large_image",
+                    "og:site_name": "U.S. Senator Michael Bennet",
+                    "og:title": "Bennet, Brown, Bicameral Colleagues Introduce Bill to Support Fossil Fuel Workers Amid Clean Energy Transition - U.S. Senator Michael Bennet",
+                    "og:image:height": "1400",
+                    "twitter:label1": "Written by",
+                    "twitter:label2": "Est. reading time",
+                    "og:image:type": "image/jpeg",
+                    "msapplication-tileimage": "https://www.bennet.senate.gov/wp-content/uploads/2024/08/cropped-co-logo-1-270x270.png",
+                    "og:description": "Washington, D.C. \u2014 Colorado U.S. Senator Michael Bennet joined U.S. Senator Sherrod Brown (D-Ohio) alongside 20 of their Senate and House colleagues to reintroduce the American Energy Worker Opportunity Act. This bicameral legislation provides critical resources and training opportunities to assist and empower workers whose jobs are affected by the energy industry\u2019s move toward cleaner [\u2026]",
+                    "twitter:image": "https://www.bennet.senate.gov/wp-content/uploads/2025/02/Social-Media-Preview-Graphic.png",
+                    "twitter:data2": "3 minutes",
+                    "viewport": "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0",
+                    "og:locale": "en_US",
+                    "og:url": "https://www.bennet.senate.gov/2024/09/12/press-releases-id-7f72cc19-6774-420d-afe1-b845edfd6097/"
+                }
+            ],
+            "cse_image": [
+                {
+                    "src": "https://www.bennet.senate.gov/wp-content/uploads/2024/08/bennet-walking.jpg"
+                }
+            ]
+        }
+    }
+][0m2025-08-22 22:18:08,743 - KnowledgeAgent - INFO - Researcher Agent finished with output: Successfully wrote researcher report with ID res_20250822_112345 to state/researcher_report.json
+2025-08-22 22:18:08,743 - KnowledgeAgent - INFO - --- Workflow finished with final status: Successfully wrote researcher report with ID res_20250822_112345 to state/researcher_report.json ---
+[32;1m[1;3mSuccessfully wrote researcher report with ID res_20250822_112345 to state/researcher_report.json[0m
+
+[1m> Finished chain.[0m
+--- Workflow Complete ---
+Final Status: Successfully wrote researcher report with ID res_20250822_112345 to state/researcher_report.json

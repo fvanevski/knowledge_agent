@@ -10,35 +10,59 @@ from state import AgentState
 @tool
 def save_report(report: dict, filename: str):
     """Saves a report to a file in the state directory, appending to the 'reports' list within a JSON object."""
-    filepath = f"state/{filename}"
+    print(f"--- Attempting to save report to {filename} ---")
+    
+    # **DEBUGGING STEP**: Dump the raw report object to a temp file
     try:
-        # Read existing data if file exists
+        with open("state/report_dump.tmp", "w") as f:
+            f.write(str(report))
+    except Exception as e:
+        print(f"DEBUG: Could not write to report_dump.tmp. Error: {e}")
+
+    # Ensure the 'state' directory exists
+    if not os.path.exists('state'):
+        os.makedirs('state')
+        
+    filepath = f"state/{filename}"
+    
+    try:
+        # **TYPE CHECK**: Ensure the report is a dictionary before proceeding
+        if not isinstance(report, dict):
+            raise TypeError(f"The 'report' argument must be a dictionary, but got {type(report)} instead.")
+
+        # Read existing data
+        file_data = {"reports": []}
         if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+            print(f"DEBUG: Reading existing data from {filepath}")
             with open(filepath, "r") as f:
                 file_data = json.load(f)
                 if "reports" not in file_data or not isinstance(file_data["reports"], list):
                     file_data["reports"] = []
-        else:
-            file_data = {"reports": []}
-
+        
         # Append new report
         file_data["reports"].append(report)
-
+        
         # Write data back to file
+        print(f"DEBUG: Writing updated data to {filepath}")
         with open(filepath, "w") as f:
             json.dump(file_data, f, indent=4)
+        print("DEBUG: Write operation completed.")
 
         # Verification step
+        print("DEBUG: Verifying file write...")
         with open(filepath, "r") as f:
             verify_data = json.load(f)
+        
         if verify_data["reports"][-1] == report:
-            return f"Successfully saved and verified report to {filename}"
+            print("--- Verification successful ---")
+            return f"Successfully saved and verified report to {filepath}"
         else:
-            raise ToolException(f"Verification failed for {filename}. The data in the file does not match the data that was supposed to be saved.")
+            print("--- Verification FAILED ---")
+            raise ToolException(f"Verification failed for {filename}. The last report in the file does not match what was saved.")
 
-    except (IOError, json.JSONDecodeError) as e:
-        raise ToolException(f"Failed to save report to {filename}. Error: {e}")
-
+    except (IOError, json.JSONDecodeError, TypeError) as e:
+        print(f"--- ERROR in save_report: {e} ---")
+        raise ToolException(f"An error occurred while saving the report to {filename}: {e}")
 
 @tool
 def load_report(filename: str) -> str:
@@ -74,10 +98,10 @@ def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
         ("placeholder", "{agent_scratchpad}"),
     ])
     agent = create_openai_tools_agent(llm, tools, prompt)
-    # Give the agent more steps to complete its work
     return AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True, max_iterations=25)
 
 # --- Agent Node Functions ---
+# (The run_* functions remain the same as the last correct version)
 
 async def run_analyst(state: AgentState):
     print("--- Running Analyst Agent ---")
@@ -94,7 +118,6 @@ async def run_analyst(state: AgentState):
     
     task_input = "Your task is to identify knowledge gaps. Begin now."
     
-    # Pass timestamp as a separate key
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
     
     logger.info(f"Analyst Agent finished with output: {result['output']}")
