@@ -1,6 +1,6 @@
 # sub_agents.py
 from langchain_openai.chat_models import ChatOpenAI
-from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents import create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool, ToolException
 import json
@@ -12,43 +12,92 @@ def _extract_and_clean_json_analyst(llm_output: str) -> dict:
     """
     Extracts and cleans a JSON object from the Analyst LLM's output.
     """
+    import logging
+    logger = logging.getLogger('KnowledgeAgent')
+
+    status = f"Extracting and cleaning JSON from analyst LLM output"
+    print(status)
+    logger.info(status)
     # Use a regex to find the JSON blob
     match = re.search(r"\{.*\}", llm_output, re.DOTALL)
+    status = f"Regex match for JSON: {match}"
+    print(status)
+    logger.info(status)
     if not match:
-        raise ValueError("No JSON object found in the output.")
+        status = f"No JSON object found in the output."
+        print(status)
+        logger.error(status)
+        raise ValueError(status)
 
     json_string = match.group(0)
+    status = f"Extracted JSON string: {json_string}"
+    print(status)
+    logger.info(status)
 
     # Try to parse the JSON
+    status = f"Attempting to parse JSON: {json_string}"
+    print(status)
+    logger.info(status)
     try:
-        return json.loads(json_string)
+        parsed_json = json.loads(json_string)
+        status = f"Successfully parsed JSON: {parsed_json}"
+        print(status)
+        logger.info(status)
+        return parsed_json
     except json.JSONDecodeError as e:
-        raise ValueError(f"Failed to parse JSON: {e}")
+        status = f"Failed to parse JSON: {e}"
+        print(status)
+        logger.error(status)
+        raise ValueError(status)
 
 def _extract_and_clean_json_researcher(llm_output: str) -> dict:
     """
     Extracts, cleans, and reconstructs a valid JSON object from the LLM's output.
     """
+    import logging
+    logger = logging.getLogger('KnowledgeAgent')
+    
+    status = f"Extracting and cleaning JSON from researcher LLM output"
+    print(status)
+    logger.info(status)
     try:
         # First, try to parse the whole output as-is
         return json.loads(llm_output)
     except json.JSONDecodeError:
         # If that fails, try to find all search objects and reconstruct the JSON
+        status = f"Initial JSON parsing failed, attempting to reconstruct JSON from partial outputs."
+        print(status)
+        logger.info(status)
         try:
             # This regex will find all dictionaries that look like search objects
             searches = re.findall(r'\{\s*"rationale":.*?"results":.*?\}\s*\}', llm_output, re.DOTALL)
-            
+            status = f"Found {len(searches)} search objects in the output."
+            print(status)
+            logger.info(status)
+
             if not searches:
                 # If no search objects are found, return a valid JSON with an empty list
+                status = f"No search objects found in the output, returning empty searches list."
+                print(status)
+                logger.info(status)
                 return {"searches": []}
 
             # Reconstruct the JSON object
+            status = f"Reconstructing JSON from found search objects."
+            print(status)
+            logger.info(status)
             reconstructed_json_string = f'{{"searches": [{", ".join(searches)}]}}'
             
+            status = f"Reconstructed JSON: {reconstructed_json_string}"
+            print(status)
+            logger.info(status)
             return json.loads(reconstructed_json_string)
 
         except (json.JSONDecodeError, ValueError) as e:
-            raise ValueError(f"Failed to parse or reconstruct JSON: {e}")
+            status = f"Failed to parse or reconstruct JSON: {e}"
+            print(status)
+            logger.error(status)
+            raise ValueError(status)
 
 @tool
 def save_analyst_report(analyst_report: str) -> dict:
@@ -61,37 +110,43 @@ def save_analyst_report(analyst_report: str) -> dict:
     import logging
     logger = logging.getLogger('KnowledgeAgent')
 
-    print("\n--- save_analyst_report tool called ---")
-    logger.info("\n--- save_analyst_report tool called ---")
+    status = f"Save analyst report tool called ---"
+    print(status)
+    logger.info(status)
     filepath = "state/analyst_report.json"
     file_data = {"reports": []}
-    print(f"Loading existing analyst reports into memory from {filepath}")
-    logger.info(f"Loading existing analyst reports into memory from {filepath}")
+    status = f"Loading existing analyst reports into memory from {filepath}"
+    print(status)
+    logger.info(status)
     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         with open(filepath, "r") as f:
             file_data = json.load(f)
-    print(f"Appending new analyst report to data structure")
-    logger.info(f"Appending new analyst report to data structure")
+    status = f"Appending new analyst report to data structure"
+    print(status)
+    logger.info(status)
     try:
         # Parse the incoming analyst_report string into a dictionary
         report_object = json.loads(analyst_report)
         file_data["reports"].append(report_object)
     except json.JSONDecodeError as e:
-        print(f"Error parsing analyst report string: {e}")
-        logger.error(f"Error parsing analyst report string: {e}")
-        raise ToolException(f"Error parsing analyst report string: {e}")
+        status = f"Error parsing analyst report string: {e}"
+        print(status)
+        logger.error(status)
+        raise ToolException(status)
     try:
         with open(filepath, "w") as f:
             json.dump(file_data, f, indent=2)
     except Exception as e:
-        print(f"Error saving analyst report: {e}")
-        logger.error(f"Error saving analyst report: {e}")
-        raise ToolException(f"Error saving analyst report: {e}")
-    
-    print(f"Successfully wrote analyst report to {filepath}")
-    logger.info(f"Successfully wrote analyst report to {filepath}")
+        status = f"Error saving analyst report: {e}"
+        print(status)
+        logger.error(status)
+        raise ToolException(status)
+
+    status = f"Successfully wrote analyst report to {filepath}"
+    print(status)
+    logger.info(status)
     return {
-        "analyst_status": f"Successfully wrote analyst report to `state/analyst_report.json`"
+        "analyst_status": status
     }
 
 @tool
@@ -105,29 +160,34 @@ def initialize_researcher_report(timestamp: str) -> dict:
     import logging
     logger = logging.getLogger('KnowledgeAgent')
 
-    print("\n--- initialize_researcher_report tool called, attempting to load analyst_report.json ---")
-    logger.info("\n--- initialize_researcher_report tool called, attempting to load analyst_report.json ---")
+    status = f"Initializing researcher report tool called, attempting to load analyst_report.json ---"
+    print(status)
+    logger.info(status)
 
     try:
         analyst_report_str = load_report('analyst_report.json')
     except Exception as e:
-        logger.error(f"Error loading analyst report: {e}")
-        print(f"Error loading analyst report: {e}")
-        raise ToolException(f"Error loading analyst report: {e}")
+        status = f"[ERROR] Error loading analyst report: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
 
     if "No report found" in analyst_report_str:
-        logger.error("Analyst report not found.")
-        print("Analyst report not found.")
-        raise ToolException("Analyst report not found.")
-    
-    print(f"Loaded analyst report:\n{analyst_report_str}")
-    logger.info(f"Loaded analyst report:\n{analyst_report_str}")
+        status = f"[ERROR] Analyst report not found."
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+
+    status = f"Loaded analyst report:\n{analyst_report_str}"
+    print(status)
+    logger.info(status)
 
     analyst_report = json.loads(analyst_report_str)
     
     report_id = f"res_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
-    print(f"Generated researcher report ID: {report_id}")
-    logger.info(f"Generated researcher report ID: {report_id}")
+    status = f"Generated researcher report ID: {report_id}"
+    print(status)
+    logger.info(status)
 
     gaps_to_do = [
         {"gap_id": gap["gap_id"], "description": gap["description"], "research_topic": gap["research_topic"], "searches": []}
@@ -139,24 +199,28 @@ def initialize_researcher_report(timestamp: str) -> dict:
         "gaps": gaps_to_do
     }
 
-    print(f"Initialized new researcher report:\n{json.dumps(new_report, indent=2)}")
-    logger.info(f"Initialized new researcher report:\n{json.dumps(new_report, indent=2)}")
+    status = f"Initialized new researcher report:\n{json.dumps(new_report, indent=2)}"
+    print(status)
+    logger.info(status)
 
     filepath = "state/researcher_report.json"
 
-    print(f"Loading researcher reports into memory from {filepath}")
-    logger.info(f"Loading researcher reports into memory from {filepath}")
+    status = f"Loading researcher reports into memory from {filepath}"
+    print(status)
+    logger.info(status)
     try:
         with open(filepath, "r") as f:
             file_data = json.load(f)
     except Exception as e:
-        logger.error(f"Error reading {filepath}: {e}")
-        print(f"Error reading {filepath}: {e}")
-        raise ToolException(f"Error reading {filepath}: {e}")
+        status = f"[ERROR] Error reading {filepath}: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
 
     file_data = {"reports": []}
-    print(f"Loading researcher reports into data structure")
-    logger.info(f"Loading researcher reports into data structure")
+    status = f"Loading researcher reports into data structure"
+    print(status)
+    logger.info(status)
     try:
         if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
             with open(filepath, "r") as f:
@@ -166,28 +230,39 @@ def initialize_researcher_report(timestamp: str) -> dict:
         print(f"Error loading {filepath} into data structure: {e}")
         raise ToolException(f"Error loading {filepath} into data structure: {e}")
 
-    print(f"Appending new report to researcher reports data structure")
-    logger.info(f"Appending new report to researcher reports data structure")
+    status = f"Loaded researcher reports from {filepath} into data structure"
+    print(status)
+    logger.info(status)
+
+    status = f"Appending new report to researcher reports data structure"
+    print(status)
+    logger.info(status)
+
     try:
         file_data["reports"].append(new_report)
-        print(f"Successfully appended new report to researcher reports data structure")
-        logger.info(f"Successfully appended new report to researcher reports data structure")
+        status = f"Successfully appended new report to researcher reports data structure"
+        print(status)
+        logger.info(status)
     except Exception as e:
-        logger.error(f"Error appending new report to researcher reports data structure: {e}")
-        print(f"Error appending new report to researcher reports data structure: {e}")
-        raise ToolException(f"Error appending new report to researcher reports data structure: {e}")
+        status = f"[ERROR] Error appending new report to researcher reports data structure: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
 
-    print(f"Writing updated researcher reports to {filepath}")
-    logger.info(f"Writing updated researcher reports to {filepath}")
+    status = f"Writing updated researcher reports to {filepath}"
+    print(status)
+    logger.info(status)
     try:
         with open(filepath, "w") as f:
             json.dump(file_data, f, indent=2)
-        print(f"Successfully wrote updated researcher reports to {filepath}")
-        logger.info(f"Successfully wrote updated researcher reports to {filepath}")
+        status = f"Successfully wrote updated researcher reports to {filepath}"
+        print(status)
+        logger.info(status)
     except Exception as e:
-        logger.error(f"Error writing updated researcher reports to {filepath}: {e}")
-        print(f"Error writing updated researcher reports to {filepath}: {e}")
-        raise ToolException(f"Error writing updated researcher reports to {filepath}: {e}")
+        status = f"[ERROR] Error writing updated researcher reports to {filepath}: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
 
     return {
         "researcher_report_id": report_id,
@@ -202,59 +277,68 @@ def update_researcher_report(report_id: str, current_gap: dict, search_results: 
     import logging
     logger = logging.getLogger('KnowledgeAgent')
 
-    print(f"Updating researcher report {report_id} with new gap data.")
-    logger.info(f"Updating researcher report {report_id} with new gap data.")
+    status = f"Updating researcher report {report_id} with new gap data."
+    print(status)
+    logger.info(status)
 
     filepath = "state/researcher_report.json"
     try:
         with open(filepath, "r") as f:
             file_data = json.load(f)
     except Exception as e:
-        logger.error(f"Could not read or parse {filepath}. Error: {str(e)}")
-        print(f"[ERROR] Could not read or parse {filepath}. Error: {str(e)}")
-        raise ToolException(f"Could not read or parse {filepath}: {e}")
+        status = f"[ERROR] Could not read or parse {filepath}. Error: {str(e)}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
 
     # Find the report index
     report_list = file_data.get("reports", [])
     report_index = next((i for i, r in enumerate(report_list) if r.get("report_id") == report_id), None)
     if report_index is None:
-        print(f"Report with ID {report_id} not found.")
-        logger.error(f"Report with ID {report_id} not found.")
-        raise ToolException(f"Report with ID {report_id} not found.")
+        status = f"[ERROR] Report with ID {report_id} not found."
+        print(status)
+        logger.error(status)
+        raise ToolException(status)
 
     # Find the gap index
     gap_list = report_list[report_index].get("gaps", [])
     gap_id = current_gap.get("gap_id")
     gap_index = next((i for i, g in enumerate(gap_list) if g.get("gap_id") == gap_id), None)
     if gap_index is None:
-        print(f"Gap with ID {gap_id} not found in report {report_id}.")
-        logger.error(f"Gap with ID {gap_id} not found in report {report_id}.")
-        raise ToolException(f"Gap with ID {gap_id} not found in report {report_id}.")
+        status = f"[ERROR] Gap with ID {gap_id} not found in report {report_id}."
+        print(status)
+        logger.error(status)
+        raise ToolException(status)
 
     # Update the gap's searches
 
-    print(f"Updating {report_id}/{gap_id} in the data structure with new search results.")
-    logger.info(f"Updating {report_id}/{gap_id} in the data structure with new search results.")
+    status = f"Updating {report_id}/{gap_id} in the data structure with new search results."
+    print(status)
+    logger.info(status)
     try:
         file_data['reports'][report_index]['gaps'][gap_index]['searches'] = search_results
     except Exception as e:
-        logger.error(f"Error updating {report_id}/{gap_id} in the data structure: {e}")
-        print(f"[ERROR] Error updating {report_id}/{gap_id} in the data structure: {e}")
-        raise ToolException(f"Error updating {report_id}/{gap_id} in the data structure: {e}")
-    print(f"Inserted {len(search_results)} search results to {report_id}/{gap_id} in the data structure.")
-    logger.info(f"Inserted {len(search_results)} search results to {report_id}/{gap_id} in the data structure.")
+        status = f"[ERROR] Error updating {report_id}/{gap_id} in the data structure: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+    status = f"Inserted {len(search_results)} search results to {report_id}/{gap_id} in the data structure."
+    print(status)
+    logger.info(status)
 
     # Write back to file
     try:
         with open(filepath, "w") as f:
             json.dump(file_data, f, indent=2)
-        logger.info(f"Successfully wrote updated data for report {report_id} to {filepath}")
-        print(f"Successfully wrote updated data for report {report_id} to {filepath}")
-        return f"Successfully updated report {report_id} with search for gap {gap_id}."
+        status = f"Successfully wrote updated data for report {report_id} to {filepath}"
+        logger.info(status)
+        print(status)
+        return status
     except Exception as e:
-        logger.error(f"Failed to write to {filepath}: {e}")
-        print(f"[ERROR] Failed to write to {filepath}: {e}")
-        raise ToolException(f"Failed to write to {filepath}: {e}")
+        status = f"[ERROR] Failed to write to {filepath}: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
 
 @tool
 def load_report(filename: str) -> str:
@@ -264,19 +348,22 @@ def load_report(filename: str) -> str:
 
     filepath = f"state/{filename}"
     if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
-        print(f"[ERROR] No report found at {filepath}.")
-        logger.warning(f"No report found at {filepath}.")
-        return "No report found."
+        status = f"[ERROR] No report found at {filepath}."
+        print(status)
+        logger.warning(status)
+        return status
     with open(filepath, "r") as f:
         data = json.load(f)
     if "reports" in data and isinstance(data["reports"], list) and data["reports"]:
-        print(f"Loaded report from {filepath}: {json.dumps(data['reports'][-1], indent=2)}")
-        logger.info(f"Loaded report from {filepath}: {json.dumps(data['reports'][-1], indent=2)}")
+        status = f"Loaded report from {filepath}: {json.dumps(data['reports'][-1], indent=2)}"
+        print(status)
+        logger.info(status)
         return json.dumps(data["reports"][-1])
     else:
-        print(f"[ERROR] No reports found in the file.")
-        logger.error(f"No reports found in the file.")
-        return "No reports found in the file."
+        status = "[ERROR] No reports found in the file."
+        print(status)
+        logger.error(status)
+        return status
 
 @tool
 def human_approval(plan: str) -> str:
@@ -288,74 +375,146 @@ def human_approval(plan: str) -> str:
     import logging
     logger = logging.getLogger('KnowledgeAgent')
 
-    print(f"\nPROPOSED PLAN:\n{plan}")
-    logger.info(f"PROPOSED PLAN:\n{plan}")
+    status = f"PROPOSED PLAN:\n{plan}"
+    print(f"\n{status}")
+    logger.info(f"{status}")
     response = input("Do you approve this plan? (y/n): ").lower()
     if response == 'y':
-        print("Approved.")
-        logger.info("Approved.")
+        status = "Approved."
+        print(status)
+        logger.info(status)
         return "approved"
-    print("Denied.")
-    logger.info("Denied.")
+    status = "Denied."
+    print(status)
+    logger.info(status)
     return "denied"
-
-def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
-    """Helper function to create a sub-agent executor."""
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "{input}"),
-        ("placeholder", "{agent_scratchpad}"),
-    ])
-    agent = create_openai_tools_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True, max_iterations=20)
 
 # --- Agent Node Functions ---
 
-async def run_analyst(state: AgentState):
-
-    print("--- Running Analyst Node ---")
+async def analyst_agent_node(state: AgentState):
+    
+    """The primary node for the analyst agent's reasoning loop."""
+    
     logger = state['logger']
     timestamp = state['timestamp']
 
-    # One-time initialization of the report and state
-    if not state.get("analyst_report_id"):
-        print("--- State not initialized. Performing initialization of analyst now. ---")
-        try:
-            report_id = f"ana_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
-            if report_id:
-                state["analyst_report_id"] = report_id
-                logger.info(f"Successfully initialized report with ID: {state['analyst_report_id']}")
-            else:
-                logger.error(f"Failed to initialize analyst report: {report_id}")
-                return {"status": f"Failed to initialize analyst report {report_id}."}
-        except Exception as e:
-            logger.error(f"Failed to initialize analyst report: {e}")
-            return {"status": f"Failed to initialize analyst report {report_id}."}
-
-    analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels"]]
+    report_id = f"ana_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
+    state["analyst_report_id"] = report_id
 
     with open("prompt_templates/analyst_prompt.txt", "r") as f:
-        analyst_prompt = f.read()
-
-    agent_executor = create_agent_executor(state['model'], analyst_tools, analyst_prompt)
+        analyst_prompt_template = f.read()
     
-    task_input = "Your task is to identify knowledge gaps. Begin now."
+    prompt = ChatPromptTemplate.from_template(analyst_prompt_template)
+    analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels"]]
 
-    analyst_result = await agent_executor.ainvoke({"input": task_input})
+    status = f"--- Calling Analyst Agent with tools: {', '.join([t.name for t in analyst_tools])} ---"
+    print(status)
+    logger.info(status)
+    try:
+        agent_runnable = create_openai_tools_agent(state['model'], analyst_tools, prompt)
+    except Exception as e:
+        status = f"Failed to create agent runnable: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status)
+        return {"status": "error", "message": str(e)}
+
+    status = f"--- Invoking Analyst Agent with current messages ---"
+    print(status)
+    logger.info(status)
+    try:
+        result = await agent_runnable.ainvoke({
+            "messages": state['messages'],
+            "analyst_report_id": state.get("analyst_report_id", "")
+        })
+    except Exception as e:
+            status = f"Failed to invoke agent runnable: {e}"
+            print(f"[ERROR] {status}")
+            logger.error(status)
+            return {"status": "error", "message": str(e)}
+
+    status = f"--- Analyst Agent returned result ---\n{result}"
+    print(status)
+    logger.info(status)
+    return {"messages": [result]}
+
+def save_analyst_report_node(state: AgentState):
+    """
+    A dedicated node to save the final report.
+    This runs *after* the agent loop is finished.
+    """
+    logger = state['logger']
+    final_message = state['messages'][-1]
+
+    status = "--- Saving Analyst Report ---"
+    print(f"[INFO] {status}")
+    logger.info(status)
 
     try:
-        json_output = _extract_and_clean_json_analyst(analyst_result.get("output", ""))
-        print(f"Attempting to save analyst report:\n{json_output}")
-        logger.info(f"Attempting to save analyst report:\n{json_output}")
-        save_analyst_report(json.dumps(json_output))
-    except Exception as e:
-        print(f"[ERROR] Failed to process analyst result: {e}")
-        logger.error(f"Failed to process analyst result: {e}")
+        report_json = _extract_and_clean_json_analyst(final_message.content)
+        save_analyst_report(report_json)
+        status = f"Successfully saved analyst report with ID {report_json.get('report_id')}"
+    except (ValueError, KeyError) as e:
+        status = f"Error processing or saving analyst report: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status)
+    
+    print(f"[INFO] {status}")
+    logger.info(status)
+    return {"status": status}
 
-    final_status = f"Successfully completed analysis and wrote report with ID {state['analyst_report_id']} to file `state/analyst_report.json`."
-    print(final_status)
-    logger.info(final_status)
-    return {"status": final_status}
+# Legacy analyst agent function
+
+# async def run_analyst(state: AgentState):
+#     print("--- Running Analyst Node ---")
+#     logger = state['logger']
+#     timestamp = state['timestamp']
+
+#     # One-time initialization of the report and state
+#     if not state.get("analyst_report_id"):
+#         print("--- State not initialized. Performing initialization of analyst now. ---")
+#         try:
+#             report_id = f"ana_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
+#             if report_id:
+#                 state["analyst_report_id"] = report_id
+#                 logger.info(f"Successfully initialized report with ID: {state['analyst_report_id']}")
+#             else:
+#                 logger.error(f"Failed to initialize analyst report: {report_id}")
+#                 return {"status": f"Failed to initialize analyst report {report_id}."}
+#         except Exception as e:
+#             logger.error(f"Failed to initialize analyst report: {e}")
+#             return {"status": f"Failed to initialize analyst report {report_id}."}
+
+#     analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels"]]
+
+#     with open("prompt_templates/analyst_prompt.txt", "r") as f:
+#         analyst_prompt = f.read()
+
+#     # Create the agent using the modern pattern
+#     analyst_agent = create_openai_tools_agent(
+#         state['model'], analyst_tools, ChatPromptTemplate.from_messages([("system", analyst_prompt), ("human", "{input}"), ("placeholder", "{agent_scratchpad}")])
+#     )
+#     agent_executor = AgentExecutor(agent=analyst_agent, tools=analyst_tools, handle_parsing_errors=True)
+    
+#     task_input = "Your task is to identify knowledge gaps. Begin now."
+
+#     analyst_result = await agent_executor.ainvoke({
+#         "input": task_input,
+#         "analyst_report_id": state['analyst_report_id']
+#     })
+
+#     try:
+#         json_output = _extract_and_clean_json_analyst(analyst_result.get("output", ""))
+#         print(f"Attempting to save analyst report:\n{json_output}")
+#         logger.info(f"Attempting to save analyst report:\n{json_output}")
+#         save_analyst_report(json.dumps(json_output))
+#     except Exception as e:
+#         print(f"[ERROR] Failed to process analyst result: {e}")
+#         logger.error(f"Failed to process analyst result: {e}")
+
+#     final_status = f"Successfully completed analysis and wrote report with ID {state['analyst_report_id']} to file `state/analyst_report.json`."
+#     print(final_status)
+#     logger.info(final_status)
+#     return {"status": final_status}
 
 async def run_researcher(state: AgentState):
     """

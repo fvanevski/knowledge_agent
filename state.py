@@ -1,10 +1,16 @@
 # state.py
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Annotated
+from langchain_core.messages import BaseMessage
+import operator
 
 class AgentState(TypedDict):
     """
     Represents the state of the agent graph.
+    The `messages` field is the primary channel for agent communication.
+    The `Annotated` type with `operator.add` ensures that new messages are
+    appended to the list, rather than overwriting it.
     """
+    messages: Annotated[List[BaseMessage], operator.add]
     task: str
     status: str
     timestamp: str
