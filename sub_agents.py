@@ -173,7 +173,7 @@ def initialize_researcher_report(timestamp: str) -> dict:
     }
 
 @tool
-def update_researcher_report(report_id: str, current_gap: dict, search_results: list):
+def update_researcher_report(report_id: str, current_gap: dict, searches: dict):
     """
     Updates the researcher's report with the results of a single search.
     """
@@ -214,13 +214,13 @@ def update_researcher_report(report_id: str, current_gap: dict, search_results: 
     print(f"Updating {report_id}/{gap_id} in the data structure with new search results.")
     logger.info(f"Updating {report_id}/{gap_id} in the data structure with new search results.")
     try:
-        file_data['reports'][report_index]['gaps'][gap_index]['searches'] = search_results
+        file_data("reports")[report_index]("gaps")[gap_index].set("searches", searches)
     except Exception as e:
         logger.error(f"Error updating {report_id}/{gap_id} in the data structure: {e}")
         print(f"[ERROR] Error updating {report_id}/{gap_id} in the data structure: {e}")
         raise ToolException(f"Error updating {report_id}/{gap_id} in the data structure: {e}")
-    print(f"Inserted {len(search_results)} search results to {report_id}/{gap_id} in the data structure.")
-    logger.info(f"Inserted {len(search_results)} search results to {report_id}/{gap_id} in the data structure.")
+    print(f"Inserted {len(searches)} search results to {report_id}/{gap_id} in the data structure.")
+    logger.info(f"Inserted {len(searches)} search results to {report_id}/{gap_id} in the data structure.")
 
     # Write back to file
     try:
@@ -365,8 +365,8 @@ async def run_researcher(state: AgentState):
     # Create the specialized agent for performing searches
     with open("prompt_templates/search_agent_prompt.txt", "r") as f:
         search_agent_prompt = f.read()
-        
-    search_tools = [tool for tool in state['mcp_tools'] if tool.name == 'google_search']
+
+    search_tools = [tool for tool in state['mcp_tools'] if tool.name in ['google_search', 'fetch']]
     search_agent = create_agent_executor(state['model'], search_tools, search_agent_prompt)
 
     # Main control loop, managed by the node
@@ -391,9 +391,8 @@ async def run_researcher(state: AgentState):
                 try:
                     # Use the new helper function to extract and clean the JSON
                     json_output = _extract_and_clean_json(agent_result.get("output", ""))
-                    searches = json_output.get("searches", [])
-                    print(f"Successfully parsed searches for gap {gap_id}: {searches}")
-                    logger.info(f"Successfully parsed searches for gap {gap_id}: {searches}")
+                    print(f"Successfully parsed searches for gap {gap_id}: {json_output}")
+                    logger.info(f"Successfully parsed searches for gap {gap_id}: {json_output}")
 
                 except (ValueError, json.JSONDecodeError) as e:
                     print(f"[ERROR] Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
@@ -406,7 +405,7 @@ async def run_researcher(state: AgentState):
                 try:
                     report_id = state['researcher_report_id']
                     current_gap = state['researcher_current_gap']
-                    result = update_researcher_report(report_id, current_gap, searches)
+                    result = update_researcher_report(report_id, current_gap, json_output)
                     print(f"update_researcher_report returned: {result}")
                     logger.info(f"update_researcher_report returned: {result}")
                 except Exception as e:

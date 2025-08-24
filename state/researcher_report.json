@@ -853,6 +853,76 @@
           "searches": []
         }
       ]
+    },
+    {
+      "report_id": "res_20250824_040635",
+      "gaps": [
+        {
+          "gap_id": "gap_2025_infrastructure_bill",
+          "description": "The knowledge base lacks detailed coverage of the 2025 bipartisan infrastructure bill, including its fiscal impact, project rollouts, and stakeholder analyses.",
+          "research_topic": "Compile a comprehensive report on the 2025 Infrastructure Bill: legislative history, budget allocations, projected economic effects, and key political negotiations.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_climate_policy_updates",
+          "description": "Stale or missing information on post\u20112024 climate legislation, such as the Clean Energy Transition Act and updated EPA regulations.",
+          "research_topic": "Investigate and document all federal climate policy actions taken since 2023, including new statutes, executive orders, and regulatory changes affecting emissions, renewable energy incentives, and environmental justice.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_ai_governance",
+          "description": "No current data on AI regulation initiatives, federal AI research funding, or emerging legal frameworks addressing algorithmic bias.",
+          "research_topic": "Research the latest U.S. federal policies, bills, and executive actions concerning artificial intelligence governance, focusing on transparency, accountability, and anti\u2011bias measures.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_postpandemic_economic_data",
+          "description": "Outdated economic indicators (e.g., unemployment, inflation) and incomplete post\u2011COVID recovery statistics beyond 2023.",
+          "research_topic": "Gather updated macroeconomic data for 2024\u20132025, including employment trends, inflation rates, and sectoral growth, with a focus on disparities among underrepresented groups.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_supreme_court_recent_cases",
+          "description": "Missing summaries of Supreme Court decisions issued in 2024\u20112025 related to voting rights, civil liberties, and executive power.",
+          "research_topic": "Compile a briefing on all U.S. Supreme Court rulings from 2024\u20132025 that impact election law, freedom of speech, or federal regulatory authority.",
+          "searches": []
+        }
+      ]
+    },
+    {
+      "report_id": "res_20250824_043811",
+      "gaps": [
+        {
+          "gap_id": "gap_2025_infrastructure_bill",
+          "description": "The knowledge base lacks detailed coverage of the 2025 bipartisan infrastructure bill, including its fiscal impact, project rollouts, and stakeholder analyses.",
+          "research_topic": "Compile a comprehensive report on the 2025 Infrastructure Bill: legislative history, budget allocations, projected economic effects, and key political negotiations.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_climate_policy_updates",
+          "description": "Stale or missing information on post\u20112024 climate legislation, such as the Clean Energy Transition Act and updated EPA regulations.",
+          "research_topic": "Investigate and document all federal climate policy actions taken since 2023, including new statutes, executive orders, and regulatory changes affecting emissions, renewable energy incentives, and environmental justice.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_ai_governance",
+          "description": "No current data on AI regulation initiatives, federal AI research funding, or emerging legal frameworks addressing algorithmic bias.",
+          "research_topic": "Research the latest U.S. federal policies, bills, and executive actions concerning artificial intelligence governance, focusing on transparency, accountability, and anti\u2011bias measures.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_postpandemic_economic_data",
+          "description": "Outdated economic indicators (e.g., unemployment, inflation) and incomplete post\u2011COVID recovery statistics beyond 2023.",
+          "research_topic": "Gather updated macroeconomic data for 2024\u20132025, including employment trends, inflation rates, and sectoral growth, with a focus on disparities among underrepresented groups.",
+          "searches": []
+        },
+        {
+          "gap_id": "gap_supreme_court_recent_cases",
+          "description": "Missing summaries of Supreme Court decisions issued in 2024\u20112025 related to voting rights, civil liberties, and executive power.",
+          "research_topic": "Compile a briefing on all U.S. Supreme Court rulings from 2024\u20132025 that impact election law, freedom of speech, or federal regulatory authority.",
+          "searches": []
+        }
+      ]
     }
   ]
 }
