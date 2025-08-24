@@ -8,8 +8,24 @@ import os
 import re
 from state import AgentState
 
-# --- Start of new helper function ---
-def _extract_and_clean_json(llm_output: str) -> dict:
+def _extract_and_clean_json_analyst(llm_output: str) -> dict:
+    """
+    Extracts and cleans a JSON object from the Analyst LLM's output.
+    """
+    # Use a regex to find the JSON blob
+    match = re.search(r"\{.*\}", llm_output, re.DOTALL)
+    if not match:
+        raise ValueError("No JSON object found in the output.")
+
+    json_string = match.group(0)
+
+    # Try to parse the JSON
+    try:
+        return json.loads(json_string)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse JSON: {e}")
+
+def _extract_and_clean_json_researcher(llm_output: str) -> dict:
     """
     Extracts, cleans, and reconstructs a valid JSON object from the LLM's output.
     """
@@ -33,8 +49,6 @@ def _extract_and_clean_json(llm_output: str) -> dict:
 
         except (json.JSONDecodeError, ValueError) as e:
             raise ValueError(f"Failed to parse or reconstruct JSON: {e}")
-# --- End of new helper function ---
-
 
 @tool
 def save_analyst_report(analyst_report: str) -> dict:
@@ -58,7 +72,14 @@ def save_analyst_report(analyst_report: str) -> dict:
             file_data = json.load(f)
     print(f"Appending new analyst report to data structure")
     logger.info(f"Appending new analyst report to data structure")
-    file_data["reports"].append(analyst_report)
+    try:
+        # Parse the incoming analyst_report string into a dictionary
+        report_object = json.loads(analyst_report)
+        file_data["reports"].append(report_object)
+    except json.JSONDecodeError as e:
+        print(f"Error parsing analyst report string: {e}")
+        logger.error(f"Error parsing analyst report string: {e}")
+        raise ToolException(f"Error parsing analyst report string: {e}")
     try:
         with open(filepath, "w") as f:
             json.dump(file_data, f, indent=2)
@@ -323,10 +344,10 @@ async def run_analyst(state: AgentState):
     analyst_result = await agent_executor.ainvoke({"input": task_input})
 
     try:
-        json_output = analyst_result.get("output", "")
+        json_output = _extract_and_clean_json_analyst(analyst_result.get("output", ""))
         print(f"Attempting to save analyst report:\n{json_output}")
         logger.info(f"Attempting to save analyst report:\n{json_output}")
-        save_analyst_report(json_output)
+        save_analyst_report(json.dumps(json_output))
     except Exception as e:
         print(f"[ERROR] Failed to process analyst result: {e}")
         logger.error(f"Failed to process analyst result: {e}")
@@ -390,7 +411,7 @@ async def run_researcher(state: AgentState):
                 # The node, not the agent, saves the results
                 try:
                     # Use the new helper function to extract and clean the JSON
-                    json_output = _extract_and_clean_json(agent_result.get("output", ""))
+                    json_output = _extract_and_clean_json_researcher(agent_result.get("output", ""))
                     searches = json_output.get("searches", [])
                     print(f"Successfully parsed searches for gap {gap_id}: {searches}")
                     logger.info(f"Successfully parsed searches for gap {gap_id}: {searches}")

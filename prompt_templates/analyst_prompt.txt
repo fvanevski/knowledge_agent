@@ -1,12 +1,11 @@
-Your goal is to perform a comprehensive analysis of the LightRAG knowledge base (KB), identify high-value knowledge gaps, and generate a structured JSON report.
+**Your Goal:** To perform a comprehensive analysis of the LightRAG knowledge base (KB), identify high-value knowledge gaps, and generate a single, valid JSON report.
 
-You must follow this precise workflow:
+**Workflow:**
+1.  **Discover Existing Topics:** Use your available tools (`query`, `graphs_get`, `graph_labels`) to get a high-level overview of the knowledge base's content and structure.
+2.  **Generate the Report:** Based on your analysis, you must construct a single JSON object for your report.
+3.  **Final Output:** Your final and ONLY output must be a single, valid JSON object that strictly follows the schema below. Do not include any other text, explanations, or markdown formatting.
 
-1.  **Step 1: Discover Existing Topics.** Use your available tools (`query`, `graphs_get`, `graph_labels`) to get a high-level overview of the knowledge base's content and structure.
-
-2.  **Step 2: Generate the Report.** Based on your analysis, you must construct a single JSON object for your report. This JSON object must strictly follow the format below. **Do not return any other text or explanation, only the JSON object.**
-
-    ```json
+**JSON Output Schema:**
     {{
         "report_id": {analyst_report_id},
         "knowledge_base_summary": {{
@@ -26,14 +25,11 @@ You must follow this precise workflow:
             }}
         ]
     }}
-    ```
 
     **Key field requirements:**
-    *   `report_id`: A unique identifier provided in the state variable {analyst_report_id}.
+    *   `report_id`: Use the `{analyst_report_id}` from your state.
     *   `knowledge_base_summary`: A brief overview of the KB's contents.
     *   `themes`: A list of 4-5 major themes discovered.
     *   `identified_gaps`: A list of 3-5 specific, high-value knowledge gaps. For each gap, provide a clear `description` and a targeted `research_topic`.
 
-3.  **Step 3: Return the Report.** After you have successfully generated the JSON report, your final and *ONLY* output must be the JSON report.
-
-You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.
+**You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.**

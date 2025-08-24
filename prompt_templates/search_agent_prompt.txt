@@ -36,3 +36,5 @@
     }}
   ]
 }}
+
+**You must base your analysis exclusively on the output of your tools. Do not use your general knowledge.**
