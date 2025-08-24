@@ -143,59 +143,48 @@ def update_researcher_report(report_id: str, current_gap: dict, current_searches
     Updates the researcher's report with the results of a single search.
     """
 
-    if isinstance(current_gap, dict) and isinstance(current_searches, list):
-        print(f"\n--- update_researcher_report tool called for gap_id: {current_gap['gap_id']} ---")
-        print(f"Attempting to update report file with search results for: report_id={report_id}, gap_id={current_gap['gap_id']}, description={current_gap['description']}")
-        print(f"Search results (first search): {json.dumps(current_searches[0], indent=2) if current_searches[0] else '[]'}")
-        logger.info(f"--- update_researcher_report tool called for gap_id: {current_gap['gap_id']} with search results (first search): {json.dumps(current_searches[0], indent=2) if current_searches[0] else '[]'} ---")
-        filepath = "state/researcher_report.json"
-    
-        try:
-            with open(filepath, "r") as f:
-                file_data = json.load(f)
-        except Exception as e:
-            logger.error(f"Could not read or parse {filepath}. Error: {str(e)}")
-            print(f"[ERROR] Could not read or parse {filepath}. Error: {str(e)}")
-            
-        print(f"Loaded researcher report file: {filepath}")
-        logger.info(f"Loaded researcher report file: {filepath}")
-        
-        if isinstance(file_data["reports"], list) and all("report_id" in report for report in file_data["reports"]):
-            report = (report for report in file_data["reports"] if report["report_id"] == report_id)
-            report_index = ([i, report] for i, report in enumerate(file_data["reports"]) if report["report_id"] == report_id)
-            logger.info(f"Found report with ID {report_id}. Checking for gap {current_gap['gap_id']}.")
-            print(f"Found report with ID {report_id}. Checking for gap {current_gap['gap_id']}.")
-            if isinstance(report, dict) and all("gap_id" in gap for gap in report["gaps"]):
-                gap = (gap for gap in report["gaps"] if gap["gap_id"] == current_gap['gap_id'])
-                gap_index = ([i, gap] for i, gap in enumerate(report["gaps"]) if gap["gap_id"] == current_gap['gap_id'])
-                logger.info(f"Found gap {current_gap['gap_id']}. Appending new search results.")
-                print(f"Found gap {current_gap['gap_id']}. Appending new search results.")
-                if isinstance(current_searches, list) and isinstance(gap, dict) and isinstance(report_index, list) and isinstance(gap_index, list):
-                    file_data["reports"][report_index[0]]["gaps"][gap_index[0]]["searches"].extend(current_searches)
-                    print(f"Successfully appended search results to gap {current_gap['gap_id']} in report {report_id}.")
-                    logger.info(f"Successfully appended search results to gap {current_gap['gap_id']} in report {report_id}.")
-                    try:
-                        with open(filepath, "w") as f:
-                            json.dump(file_data, f, indent=4)
-                        logger.info(f"Successfully wrote updated data for report {report_id} to {filepath}")
-                        print(f"Successfully wrote updated data for report {report_id} to {filepath}")
-                        return f"Successfully updated report {report_id} with search for gap {current_gap['gap_id']}."
-                    except Exception as e:
-                        logger.error(f"Failed to write to {filepath}: {e}")
-                        print(f"[ERROR] Failed to write to {filepath}: {e}")
-                        raise ToolException(f"Failed to write to {filepath}: {e}")
-                else:
-                    logger.error(f"Failed to append search results to gap {current_gap['gap_id']} in report {report_id}.")
-                    print(f"[ERROR] Failed to append search results to gap {current_gap['gap_id']} in report {report_id}.")
-                    raise ToolException(f"Failed to append search results to gap {current_gap['gap_id']} in report {report_id}.")
-            else:
-                print(f"Gap {current_gap['gap_id']} not found in report {report_id}. Check if initialize_researcher_report was called and completed successfully.")
-                logger.info(f"Gap {current_gap['gap_id']} not found in report {report_id}. Check if initialize_researcher_report was called and completed successfully.")
-                raise ToolException(f"Gap {current_gap['gap_id']} not found in report {report_id}. Check if initialize_researcher_report was called and completed successfully.")
-        else:
-            print(f"[ERROR] Report data structure in {filepath} is invalid or missing 'report_id'. Check if initialize_researcher_report was called and completed successfully.")
-            logger.error(f"Report data structure in {filepath} is invalid or missing 'report_id'. Check if initialize_researcher_report was called and completed successfully.")
-            raise ToolException(f"Report data structure in {filepath} is invalid or missing 'report_id'. Check if initialize_researcher_report was called and completed successfully.")    
+    filepath = "state/researcher_report.json"
+    try:
+        with open(filepath, "r") as f:
+            file_data = json.load(f)
+    except Exception as e:
+        logger.error(f"Could not read or parse {filepath}. Error: {str(e)}")
+        print(f"[ERROR] Could not read or parse {filepath}. Error: {str(e)}")
+        raise ToolException(f"Could not read or parse {filepath}: {e}")
+
+    # Find the report index
+    report_list = file_data.get("reports", [])
+    report_index = next((i for i, r in enumerate(report_list) if r.get("report_id") == report_id), None)
+    if report_index is None:
+        print(f"Report with ID {report_id} not found.")
+        logger.error(f"Report with ID {report_id} not found.")
+        raise ToolException(f"Report with ID {report_id} not found.")
+
+    # Find the gap index
+    gap_list = report_list[report_index].get("gaps", [])
+    gap_id = current_gap.get("gap_id")
+    gap_index = next((i for i, g in enumerate(gap_list) if g.get("gap_id") == gap_id), None)
+    if gap_index is None:
+        print(f"Gap with ID {gap_id} not found in report {report_id}.")
+        logger.error(f"Gap with ID {gap_id} not found in report {report_id}.")
+        raise ToolException(f"Gap with ID {gap_id} not found in report {report_id}.")
+
+    # Update the gap's searches
+    gap_list[gap_index]["searches"].extend(current_searches)
+    print(f"Appended {len(current_searches)} search results to gap {gap_id} in report {report_id}.")
+    logger.info(f"Appended {len(current_searches)} search results to gap {gap_id} in report {report_id}.")
+
+    # Write back to file
+    try:
+        with open(filepath, "w") as f:
+            json.dump(file_data, f, indent=4)
+        logger.info(f"Successfully wrote updated data for report {report_id} to {filepath}")
+        print(f"Successfully wrote updated data for report {report_id} to {filepath}")
+        return f"Successfully updated report {report_id} with search for gap {gap_id}."
+    except Exception as e:
+        logger.error(f"Failed to write to {filepath}: {e}")
+        print(f"[ERROR] Failed to write to {filepath}: {e}")
+        raise ToolException(f"Failed to write to {filepath}: {e}")
 
 @tool
 def load_report(filename: str, logger) -> str:
@@ -330,6 +319,7 @@ async def run_researcher(state: AgentState):
     gaps_todo = state.get("researcher_gaps_todo", [])
     if isinstance(gaps_todo, list):
         for current_gap in gaps_todo:
+            state['researcher_current_gap'] = current_gap
             gap_id = current_gap['gap_id']
             research_topic = current_gap['research_topic']
 
