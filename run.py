@@ -2,13 +2,13 @@
 import asyncio
 import logging
 import json
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import os
 import argparse
-import langchain
 from langchain_openai.chat_models import ChatOpenAI
+from langchain_core.messages import HumanMessage
 from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
-from state import AgentState
 
 # Create a custom JSON formatter
 class JsonFormatter(logging.Formatter):
@@ -72,6 +72,7 @@ async def main():
     logger.info(f"Initializing Knowledge Agent for task: {task}...")
 
     try:
+        # 1. Load tools asynchronously
         mcp_tools = await get_mcp_tools()
 
         model = ChatOpenAI(
@@ -79,11 +80,14 @@ async def main():
             base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
         )
         
-        app = create_knowledge_agent_graph(task)
+        # 2. Pass tools into the graph creation function
+        app = create_knowledge_agent_graph(task, mcp_tools)
 
-        run_timestamp = datetime.now(timezone.utc).isoformat()
+        run_timestamp = datetime.now(ZoneInfo("America/Los_Angeles")).isoformat()
 
+        # 3. Initialize the state with the messages list and the first message
         initial_state = {
+            "messages": [HumanMessage(content="Your task is to identify knowledge gaps in the LightRAG knowledge base. Begin now.")],
             "task": task,
             "status": f"Starting '{task}' workflow.",
             "timestamp": run_timestamp,

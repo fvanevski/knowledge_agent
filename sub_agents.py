@@ -1,5 +1,4 @@
 # sub_agents.py
-from langchain_openai.chat_models import ChatOpenAI
 from langchain.agents import create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool, ToolException
@@ -405,7 +404,7 @@ async def analyst_agent_node(state: AgentState):
         analyst_prompt_template = f.read()
     
     prompt = ChatPromptTemplate.from_template(analyst_prompt_template)
-    analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels"]]
+    analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels", "google_search", "fetch"]]
 
     status = f"--- Calling Analyst Agent with tools: {', '.join([t.name for t in analyst_tools])} ---"
     print(status)
@@ -546,9 +545,9 @@ async def run_researcher(state: AgentState):
     # Create the specialized agent for performing searches
     with open("prompt_templates/search_agent_prompt.txt", "r") as f:
         search_agent_prompt = f.read()
-        
+    prompt = ChatPromptTemplate.from_template(search_agent_prompt)
     search_tools = [tool for tool in state['mcp_tools'] if tool.name == 'google_search']
-    search_agent = create_agent_executor(state['model'], search_tools, search_agent_prompt)
+    search_agent = create_openai_tools_agent(state['model'], search_tools, prompt)
 
     # Main control loop, managed by the node
     gaps_todo = state.get("researcher_gaps_todo", [])
@@ -627,9 +626,10 @@ async def run_curator(state: AgentState):
 2.  **Process URLs**: For each URL in the report, fetch the content.
 3.  **Ingest Sources**: Ingest the successfully fetched and relevant content.
 4.  **Report Results**: Save a report of your actions to `curator_report.json`.'''
-    
-    agent_executor = create_agent_executor(model, curator_tools, curator_prompt)
-    
+
+    prompt = ChatPromptTemplate.from_template(curator_prompt)
+    agent_executor = create_openai_tools_agent(model, curator_tools, prompt)
+
     task_input = "Your task is to curate the latest research report. Begin now."
 
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
@@ -650,8 +650,9 @@ async def run_auditor(state: AgentState):
 2.  **Generate Report**: Create a report of your findings.
 3.  **Save Report**: Use `save_report` to save the findings to `auditor_report.json`.'''
 
-    agent_executor = create_agent_executor(model, auditor_tools, auditor_prompt)
-    
+    prompt = ChatPromptTemplate.from_template(auditor_prompt)
+    agent_executor = create_openai_tools_agent(model, auditor_tools, prompt)
+
     task_input = "Your task is to audit the knowledge base. Begin now."
 
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
@@ -674,7 +675,8 @@ async def run_fixer(state: AgentState):
 4.  **Execute**: Execute the approved plan.
 5.  **Save Report**: Save a report of your actions to `fixer_report.json`.'''
 
-    agent_executor = create_agent_executor(model, fixer_tools, fixer_prompt)
+    prompt = ChatPromptTemplate.from_template(fixer_prompt)
+    agent_executor = create_openai_tools_agent(model, fixer_tools, prompt)
 
     task_input = "Your task is to fix issues from the auditor's report. Begin now."
 
@@ -697,7 +699,8 @@ async def run_advisor(state: AgentState):
 2.  **Generate Recommendations**: Based on recurring patterns, generate actionable recommendations for ingestion prompts or server configuration.
 3.  **Compile Report**: Save a final report with your top 3-5 suggestions to `advisor_report.json`.'''
 
-    agent_executor = create_agent_executor(model, advisor_tools, advisor_prompt)
+    prompt = ChatPromptTemplate.from_template(advisor_prompt)
+    agent_executor = create_openai_tools_agent(model, advisor_tools, prompt)
     
     task_input = "Your task is to provide recommendations based on the latest audit and fix reports. Begin now."
 

@@ -1,9 +1,12 @@
-**Your Goal:** To perform a comprehensive analysis of the LightRAG knowledge base (KB), identify high-value knowledge gaps, and generate a single, valid JSON report.
+**Your Goal:** To perform a comprehensive analysis of the LightRAG knowledge base, identify high-value knowledge gaps, and generate a single, valid JSON report.
 
 **Workflow:**
-1.  **Discover Existing Topics:** Use your available tools (`query`, `graphs_get`, `graph_labels`) to get a high-level overview of the knowledge base's content and structure.
-2.  **Generate the Report:** Based on your analysis, you must construct a single JSON object for your report.
-3.  **Final Output:** Your final and ONLY output must be a single, valid JSON object that strictly follows the schema below. Do not include any other text, explanations, or markdown formatting.
+1.  **Discover Existing Topics:** Use your available LightRAG knowledge base tools (`query`, `graphs_get`, and `graph_labels`) to get a high-level overview of the knowledge base's content and structure.
+2.  **Identify Themes:** Based on the knowledge base topics discovered in the previous step, identify high-level themes that accurately and descriptively represent the information contained in the knowledge base.
+3.  **Survey Theme Landscapes:** Use your available internet search tools (`google_search` and `fetch`) to get a high-level overview of the landscape for each knowledge base theme identified in the previous step. 
+4.  **Identify knowledge base gaps:** Perform an analysis based on the discovered topics, identified themes, and the theme landscapes from the previous steps to identify high-value knowledge gaps to be filled.
+5.  **Generate the Report:** Based on your analysis, you must construct a single JSON object for your report.
+6.  **Final Output:** Your final and ONLY output must be a single, valid JSON object that strictly follows the schema below. Do not include any other text, explanations, or markdown formatting.
 
 **JSON Output Schema:**
     {{
@@ -28,7 +31,7 @@
 
     **Key field requirements:**
     *   `report_id`: Use the `{analyst_report_id}` from your state.
-    *   `knowledge_base_summary`: A brief overview of the KB's contents.
+    *   `knowledge_base_summary`: A brief overview of the knowledge base's contents.
     *   `themes`: A list of 4-5 major themes discovered.
     *   `identified_gaps`: A list of 3-5 specific, high-value knowledge gaps. For each gap, provide a clear `description` and a targeted `research_topic`.
 

@@ -33,16 +33,13 @@ def should_continue(state: AgentState) -> str:
         return "end"
     return "continue"
 
-def create_knowledge_agent_graph(task: str):
+def create_knowledge_agent_graph(task: str, all_tools: list):
     """Creates the Knowledge Agent as a LangGraph StateGraph."""
     
     workflow = StateGraph(AgentState)
     
-    # Create a ToolNode with all available tools. The agent will select the ones it needs.
-    all_tools = get_mcp_tools()
     tool_node = ToolNode(all_tools)
 
-    # Add agent nodes and the new save_report node
     workflow.add_node("analyst", analyst_agent_node)
     workflow.add_node("save_analyst_report", save_analyst_report_node)
     workflow.add_node("researcher", run_researcher)
