@@ -16,7 +16,6 @@
 3.  **Final Output:** After you have finished executing your limited number of searches, your final and ONLY output must be a single, valid JSON object that strictly follows the schema below. Do not include any other text, explanations, or markdown formatting.
 
 **JSON Output Schema:**
-```json
 {{
   "searches": [
     {{
@@ -36,4 +35,4 @@
       ]
     }}
   ]
-}}```
+}}
