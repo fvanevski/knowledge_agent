@@ -10,10 +10,6 @@ from langchain_openai.chat_models import ChatOpenAI
 from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
 from state import AgentState
 
-# Create a logs directory if it doesn't exist
-if not os.path.exists('logs'):
-    os.makedirs('logs')
-
 # Create a custom JSON formatter
 class JsonFormatter(logging.Formatter):
     def format(self, record):
@@ -28,29 +24,20 @@ class JsonFormatter(logging.Formatter):
         }
         return json.dumps(log_record)
 
-# ******************************
-# ** START: DEFINITIVE LOGGING FIX **
-# ******************************
+# Create a logs directory if it doesn't exist
+if not os.path.exists('logs'):
+    os.makedirs('logs')
 
-# Configure the root logger to capture everything from all libraries
+# Configure the logger
 log_file = f"logs/knowledge_agent_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-file_handler = logging.FileHandler(log_file)
-file_handler.setFormatter(JsonFormatter())
-
-# The root logger will now send all logs to the file handler
-logging.basicConfig(level=logging.INFO, handlers=[file_handler])
-
-# Add a separate, simple console logger for immediate feedback
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logging.getLogger().addHandler(console_handler)
-
-# Enable LangChain's verbose mode, which will now be captured by the root logger
-langchain.verbose = True
-
-# ******************************
-# ** END: DEFINITIVE LOGGING FIX **
-# ******************************
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_file, mode="w"),
+        logging.StreamHandler()
+    ]
+)
 
 # Get a specific logger for our application's own messages
 logger = logging.getLogger('KnowledgeAgent')
