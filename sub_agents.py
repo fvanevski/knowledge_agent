@@ -341,7 +341,10 @@ async def run_analyst(state: AgentState):
     
     task_input = "Your task is to identify knowledge gaps. Begin now."
 
-    analyst_result = await agent_executor.ainvoke({"input": task_input})
+    analyst_result = await agent_executor.ainvoke({
+        "input": task_input,
+        "analyst_report_id": state['analyst_report_id']
+    })
 
     try:
         json_output = _extract_and_clean_json_analyst(analyst_result.get("output", ""))
