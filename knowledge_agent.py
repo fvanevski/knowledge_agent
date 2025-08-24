@@ -27,10 +27,13 @@ async def get_mcp_tools():
 def should_continue(state: AgentState) -> str:
     """
     Conditional edge to determine whether to continue the agent loop or finish.
+    This is now more robust.
     """
     last_message = state['messages'][-1]
-    if not last_message.tool_calls:
+    # If the last message is not an AIMessage or has no tool calls, finish.
+    if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
         return "end"
+    # Otherwise, continue the loop.
     return "continue"
 
 def create_knowledge_agent_graph(task: str, all_tools: list):

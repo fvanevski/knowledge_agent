@@ -1,6 +1,8 @@
 # sub_agents.py
 from langchain.agents import create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain.prompts import MessagesPlaceholder
 from langchain_core.tools import tool, ToolException
 import json
 import os
@@ -403,7 +405,12 @@ async def analyst_agent_node(state: AgentState):
     with open("prompt_templates/analyst_prompt.txt", "r") as f:
         analyst_prompt_template = f.read()
     
-    prompt = ChatPromptTemplate.from_template(analyst_prompt_template)
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", analyst_prompt_template),
+        MessagesPlaceholder(variable_name="messages"),
+        ("placeholder", "{agent_scratchpad}"),
+    ])
+
     analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels", "google_search", "fetch"]]
 
     status = f"--- Calling Analyst Agent with tools: {', '.join([t.name for t in analyst_tools])} ---"
@@ -417,13 +424,17 @@ async def analyst_agent_node(state: AgentState):
         logger.error(status)
         return {"status": "error", "message": str(e)}
 
+    # The 'input' for the agent comes from the initial HumanMessage in the state
+    last_message = state['messages'][-1]
+
     status = f"--- Invoking Analyst Agent with current messages ---"
     print(status)
     logger.info(status)
     try:
         result = await agent_runnable.ainvoke({
+            "input": last_message.content,
             "messages": state['messages'],
-            "analyst_report_id": state.get("analyst_report_id", "")
+            "analyst_report_id": state.get("analyst_report_id", "") 
         })
     except Exception as e:
             status = f"Failed to invoke agent runnable: {e}"
