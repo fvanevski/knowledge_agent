@@ -3,37 +3,41 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool, ToolException
+from pydantic import BaseModel, Field
+from typing import Optional
 import json
 import os
-import re
 from state import AgentState
 
-# --- Start of new helper function ---
-def _extract_and_clean_json(llm_output: str) -> dict:
-    """
-    Extracts, cleans, and reconstructs a valid JSON object from the LLM's output.
-    """
-    try:
-        # First, try to parse the whole output as-is
-        return json.loads(llm_output)
-    except json.JSONDecodeError:
-        # If that fails, try to find all search objects and reconstruct the JSON
-        try:
-            # This regex will find all dictionaries that look like search objects
-            searches = re.findall(r'\{\s*"rationale":.*?"results":.*?\}\s*\}', llm_output, re.DOTALL)
-            
-            if not searches:
-                # If no search objects are found, return a valid JSON with an empty list
-                return {"searches": []}
+# --- Start of Pydantic Schema Definition ---
+class SearchParams(BaseModel):
+    """Parameters for a single Google search."""
+    query: str = Field(..., description="The exact search query string.")
+    daterestrict: Optional[str] = Field(None, description="The date restriction for the search, e.g., 'y1', 'm6'.")
+    excludeTerms: Optional[str] = Field(None, description="A string of terms to exclude from the search.")
+    orTerms: Optional[str] = Field(None, description="A string of terms to include in the search (OR logic).")
+    safe: Optional[str] = Field(None, description="The safe search setting, e.g., 'off', 'active'.")
+    siteSearch: Optional[str] = Field(None, description="The sites to restrict the search to.")
+    siteSearchFilter: Optional[str] = Field(None, description="The site search filter, e.g., 'i' for include.")
+    sort: Optional[str] = Field(None, description="The sort order for the search results.")
 
-            # Reconstruct the JSON object
-            reconstructed_json_string = f'{{"searches": [{", ".join(searches)}]}}'
-            
-            return json.loads(reconstructed_json_string)
+class SearchResult(BaseModel):
+    """Represents a single search result."""
+    title: str = Field(..., description="The title of the search result.")
+    url: str = Field(..., description="The URL of the search result.")
+    snippet: str = Field(..., description="A brief snippet of the content from the search result.")
+    pagemap: Optional[dict] = Field(None, description="Structured data as DataObjects with Attributes and values, encoded as an XML block embedded in a web page.")
 
-        except (json.JSONDecodeError, ValueError) as e:
-            raise ValueError(f"Failed to parse or reconstruct JSON: {e}")
-# --- End of new helper function ---
+class Search(BaseModel):
+    """A single search operation, including its rationale, parameters, and results."""
+    rationale: str = Field(..., description="The reasoning behind why this specific search was performed.")
+    parameters: SearchParams = Field(..., description="The parameters used for the search.")
+    results: list[SearchResult] = Field(..., description="The list of results returned by the search engine.")
+
+class SearchOutput(BaseModel):
+    """The final structured output from the search_agent."""
+    searches: list[Search] = Field(..., description="A list of all the search operations performed.")
+# --- End of Pydantic Schema Definition ---
 
 
 @tool
@@ -363,12 +367,17 @@ async def run_researcher(state: AgentState):
             logger.error(f"Failed to initialize researcher report: {e}")
             return {"status": f"Failed to initialize researcher report: {e}."}
 
+    # --- Start of modified block ---
     # Create the specialized agent for performing searches
     with open("prompt_templates/search_agent_prompt.txt", "r") as f:
         search_agent_prompt = f.read()
-        
+    
+    # Create a new model instance with the structured output schema
+    structured_llm = state['model'].with_structured_output(SearchOutput)
+    
     search_tools = [tool for tool in state['mcp_tools'] if tool.name == 'google_search']
-    search_agent = create_agent_executor(state['model'], search_tools, search_agent_prompt)
+    search_agent = create_agent_executor(structured_llm, search_tools, search_agent_prompt)
+    # --- End of modified block ---
 
     # Main control loop, managed by the node
     gaps_todo = state.get("researcher_gaps_todo", [])
@@ -384,21 +393,13 @@ async def run_researcher(state: AgentState):
             try:
                 # Invoke the specialized agent for just ONE gap
                 agent_result = await search_agent.ainvoke({"input": research_topic})
-                print(f"\nAgent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
-                logger.info(f"Agent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
                 
-                # The node, not the agent, saves the results
-                try:
-                    # Use the new helper function to extract and clean the JSON
-                    json_output = _extract_and_clean_json(agent_result.get("output", ""))
-                    searches = json_output.get("searches", [])
-                    print(f"Successfully parsed searches for gap {gap_id}: {searches}")
-                    logger.info(f"Successfully parsed searches for gap {gap_id}: {searches}")
-
-                except (ValueError, json.JSONDecodeError) as e:
-                    print(f"[ERROR] Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
-                    logger.error(f"Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
-                    continue
+                # --- Start of modified block ---
+                # The agent's output is now a Pydantic object, so we can access the searches directly
+                searches = agent_result.get("output").searches
+                print(f"Successfully parsed searches for gap {gap_id}: {searches}")
+                logger.info(f"Successfully parsed searches for gap {gap_id}: {searches}")
+                # --- End of modified block ---
 
                 logger.info(f"Preparing to update report for gap {gap_id} with payload")
                 print(f"Preparing to update report for gap {gap_id} with payload")
