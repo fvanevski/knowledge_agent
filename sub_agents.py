@@ -8,7 +8,7 @@ import os
 from state import AgentState
 
 @tool
-def save_analyst_report(analyst_report: str) -> dict:
+def save_analyst_report(analyst_report: str, logger) -> dict:
     """
     Saves the analyst's report.
     This tool should be called once at the beginning of the analyst's workflow.
@@ -18,36 +18,41 @@ def save_analyst_report(analyst_report: str) -> dict:
     print("\n--- save_analyst_report tool called ---")
     filepath = "state/analyst_report.json"
     file_data = {"reports": []}
+    print(f"Loading existing analyst reports into memory from {filepath}")
+    logger.info(f"Loading existing analyst reports into memory from {filepath}")
     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         with open(filepath, "r") as f:
             file_data = json.load(f)
+    print(f"Appending new analyst report to data structure")
+    logger.info(f"Appending new analyst report to data structure")
     file_data["reports"].append(analyst_report)
     try:
         with open(filepath, "w") as f:
             json.dump(file_data, f, indent=4)
     except Exception as e:
         print(f"Error saving analyst report: {e}")
+        logger.error(f"Error saving analyst report: {e}")
         raise ToolException(f"Error saving analyst report: {e}")
+    
+    print(f"Successfully wrote analyst report to {filepath}")
+    logger.info(f"Successfully wrote analyst report to {filepath}")
     return {
         "analyst_status": f"Successfully wrote analyst report to `state/analyst_report.json`"
     }
 
 @tool
-def initialize_researcher_report(state: AgentState) -> dict:
+def initialize_researcher_report(timestamp: str, logger) -> dict:
     """
     Initializes the researcher's report.
     This tool should be called once at the beginning of the researcher's workflow.
     It reads the analyst's report, creates the initial structure for the researcher_report.json,
     and returns the report_id and the list of gaps to be populated into the AgentState.
     """
-    timestamp = state['timestamp']
-    logger = state['logger']
-
     print("\n--- initialize_researcher_report tool called, attempting to load analyst_report.json ---")
     logger.info("\n--- initialize_researcher_report tool called, attempting to load analyst_report.json ---")
 
     try:
-        analyst_report_str = load_report('analyst_report.json')
+        analyst_report_str = load_report('analyst_report.json', logger)
     except Exception as e:
         logger.error(f"Error loading analyst report: {e}")
         print(f"Error loading analyst report: {e}")
@@ -133,22 +138,16 @@ def initialize_researcher_report(state: AgentState) -> dict:
     }
 
 @tool
-def update_researcher_report(state: AgentState):
-    logger = state['logger']  # Ensure logger is retrieved from state
+def update_researcher_report(report_id: str, current_gap: dict, current_searches: list, logger):
     """
     Updates the researcher's report with the results of a single search.
     """
-    report_id = state['researcher_report_id']
-    current_gap = state['researcher_current_gap']
-    current_search = state['researcher_current_search']
 
-    if isinstance(current_gap, dict) and isinstance(current_search, dict):
-        print(f"\n--- update_researcher_report tool called for gap_id: {current_gap['gap_id']} and search_id: {current_search['search_id']} ---")
-        print(f"Attempting to update report file with: report_id={report_id}, gap_id={current_gap['gap_id']}, description={current_gap['description']}")
-        print(f"Search rationale: {current_search['rationale']}")
-        print(f"Search parameters: {json.dumps(current_search['parameters'], indent=2)}")
-        print(f"Search results: {json.dumps(current_search['results'], indent=2) if current_search['results'] else '[]'}")
-        logger.info(f"--- update_researcher_report tool called for gap_id: {current_gap['gap_id']} and search_id: {current_search['search_id']} with search_results: {json.dumps(current_search['results'], indent=2) if current_search['results'] else '[]'} ---")
+    if isinstance(current_gap, dict) and isinstance(current_searches, list):
+        print(f"\n--- update_researcher_report tool called for gap_id: {current_gap['gap_id']} ---")
+        print(f"Attempting to update report file with search results for: report_id={report_id}, gap_id={current_gap['gap_id']}, description={current_gap['description']}")
+        print(f"Search results (first search): {json.dumps(current_searches[0], indent=2) if current_searches[0] else '[]'}")
+        logger.info(f"--- update_researcher_report tool called for gap_id: {current_gap['gap_id']} with search results (first search): {json.dumps(current_searches[0], indent=2) if current_searches[0] else '[]'} ---")
         filepath = "state/researcher_report.json"
     
         try:
@@ -169,12 +168,12 @@ def update_researcher_report(state: AgentState):
             if isinstance(report, dict) and all("gap_id" in gap for gap in report["gaps"]):
                 gap = (gap for gap in report["gaps"] if gap["gap_id"] == current_gap['gap_id'])
                 gap_index = ([i, gap] for i, gap in enumerate(report["gaps"]) if gap["gap_id"] == current_gap['gap_id'])
-                logger.info(f"Found gap {current_gap['gap_id']}. Appending new search with search_id: {current_search['search_id']}.")
-                print(f"Found gap {current_gap['gap_id']}. Appending new search with search_id: {current_search['search_id']}.")
-                if isinstance(current_search, dict) and isinstance(gap, dict) and isinstance(report_index, list) and isinstance(gap_index, list):
-                    file_data["reports"][report_index[0]]["gaps"][gap_index[0]]["searches"].append(current_search)
-                    print(f"Successfully appended search {current_search['search_id']} to gap {current_gap['gap_id']} in report {report_id}.")
-                    logger.info(f"Successfully appended search {current_search['search_id']} to gap {current_gap['gap_id']} in report {report_id}.")
+                logger.info(f"Found gap {current_gap['gap_id']}. Appending new search results.")
+                print(f"Found gap {current_gap['gap_id']}. Appending new search results.")
+                if isinstance(current_searches, list) and isinstance(gap, dict) and isinstance(report_index, list) and isinstance(gap_index, list):
+                    file_data["reports"][report_index[0]]["gaps"][gap_index[0]]["searches"].extend(current_searches)
+                    print(f"Successfully appended search results to gap {current_gap['gap_id']} in report {report_id}.")
+                    logger.info(f"Successfully appended search results to gap {current_gap['gap_id']} in report {report_id}.")
                     try:
                         with open(filepath, "w") as f:
                             json.dump(file_data, f, indent=4)
@@ -186,9 +185,9 @@ def update_researcher_report(state: AgentState):
                         print(f"[ERROR] Failed to write to {filepath}: {e}")
                         raise ToolException(f"Failed to write to {filepath}: {e}")
                 else:
-                    logger.error(f"Failed to append search {current_search['search_id']} to gap {current_gap['gap_id']} in report {report_id}.")
-                    print(f"[ERROR] Failed to append search {current_search['search_id']} to gap {current_gap['gap_id']} in report {report_id}.")
-                    raise ToolException(f"Failed to append search {current_search['search_id']} to gap {current_gap['gap_id']} in report {report_id}.")
+                    logger.error(f"Failed to append search results to gap {current_gap['gap_id']} in report {report_id}.")
+                    print(f"[ERROR] Failed to append search results to gap {current_gap['gap_id']} in report {report_id}.")
+                    raise ToolException(f"Failed to append search results to gap {current_gap['gap_id']} in report {report_id}.")
             else:
                 print(f"Gap {current_gap['gap_id']} not found in report {report_id}. Check if initialize_researcher_report was called and completed successfully.")
                 logger.info(f"Gap {current_gap['gap_id']} not found in report {report_id}. Check if initialize_researcher_report was called and completed successfully.")
@@ -199,29 +198,40 @@ def update_researcher_report(state: AgentState):
             raise ToolException(f"Report data structure in {filepath} is invalid or missing 'report_id'. Check if initialize_researcher_report was called and completed successfully.")    
 
 @tool
-def load_report(filename: str) -> str:
+def load_report(filename: str, logger) -> str:
     """Loads the most recent report from a file in the state directory."""
     filepath = f"state/{filename}"
     if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+        print(f"[ERROR] No report found at {filepath}.")
+        logger.warning(f"No report found at {filepath}.")
         return "No report found."
     with open(filepath, "r") as f:
         data = json.load(f)
     if "reports" in data and isinstance(data["reports"], list) and data["reports"]:
+        print(f"Loaded report from {filepath}: {json.dumps(data['reports'][-1], indent=2)}")
+        logger.info(f"Loaded report from {filepath}: {json.dumps(data['reports'][-1], indent=2)}")
         return json.dumps(data["reports"][-1])
     else:
+        print(f"[ERROR] No reports found in the file.")
+        logger.error(f"No reports found in the file.")
         return "No reports found in the file."
 
 @tool
-def human_approval(plan: str) -> str:
+def human_approval(plan: str, logger) -> str:
     """
     Asks for human approval for a given plan.
     The plan is a string that describes the actions to be taken.
     Returns 'approved' or 'denied'.
     """
     print(f"\nPROPOSED PLAN:\n{plan}")
+    logger.info(f"PROPOSED PLAN:\n{plan}")
     response = input("Do you approve this plan? (y/n): ").lower()
     if response == 'y':
+        print("Approved.")
+        logger.info("Approved.")
         return "approved"
+    print("Denied.")
+    logger.info("Denied.")
     return "denied"
 
 def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
@@ -239,7 +249,7 @@ def create_agent_executor(llm: ChatOpenAI, tools: list, system_prompt: str):
 async def run_analyst(state: AgentState):
 
     print("--- Running Analyst Node ---")
-    logger = state['logger']  # Ensure logger is retrieved from state
+    logger = state['logger']
     timestamp = state['timestamp']
 
     # One-time initialization of the report and state
@@ -294,7 +304,7 @@ async def run_researcher(state: AgentState):
     if not state.get("researcher_report_id"):
         print("--- State not initialized. Calling initialize_researcher_report directly. ---")
         try:
-            init_result = initialize_researcher_report(state['timestamp'])
+            init_result = initialize_researcher_report(state['timestamp'], logger)
             if isinstance(init_result, dict):
                 state["researcher_report_id"] = init_result.get("researcher_report_id")
                 state["researcher_gaps_todo"] = init_result.get("researcher_gaps_todo")
@@ -322,13 +332,15 @@ async def run_researcher(state: AgentState):
         for current_gap in gaps_todo:
             gap_id = current_gap['gap_id']
             research_topic = current_gap['research_topic']
-        
+
+            print(f"\n--- Starting research for gap: {gap_id}, research topic: {research_topic} ---")
             logger.info(f"--- Starting research for gap: {gap_id} ---")
             logger.info(f"Research Topic: {research_topic}")
 
             try:
                 # Invoke the specialized agent for just ONE gap
                 agent_result = await search_agent.ainvoke({"input": research_topic})
+                print(f"\nAgent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
                 logger.info(f"Agent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
                 
                 # The node, not the agent, saves the results
@@ -338,47 +350,45 @@ async def run_researcher(state: AgentState):
                     json_end = json_output.rfind('}') + 1
                     if json_start != -1 and json_end != 0:
                         json_string = json_output[json_start:json_end]
+                        print(f"Extracted JSON string for gap {gap_id}:\n{json_string}")
                         logger.info(f"Extracted JSON string for gap {gap_id}:\n{json_string}")
-                        output_json = json.loads(json_string)
-                        searches = output_json.get("searches", [])
+                        searches = json.loads(json_string)
                     else:
                         searches = []
-                        logger.error(f"No JSON object found in the output for gap {gap_id}: {json_output}")
+                        print(f"[ERROR] No JSON object found in the output for gap {gap_id}: {json_output}, writing an empty searches list.")
+                        logger.error(f"No JSON object found in the output for gap {gap_id}: {json_output}, writing an empty searches list.")
 
                 except json.JSONDecodeError as e:
+                    print(f"[ERROR] Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
                     logger.error(f"Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
                     continue
 
-                if not searches:
-                    logger.warning(f"No searches found in the agent output for gap {gap_id}.")
-                    continue
+                update_payload = {
+                    "report_id": state['researcher_report_id'],
+                    "current_gap": state['researcher_current_gap'],
+                    "current_searches": searches,
+                    "logger": logger
+                }
 
-                for search in searches:
-                    update_payload = {
-                        "report_id": state['researcher_report_id'],
-                        "gap_id": gap_id,
-                        "description": current_gap['description'],
-                        "search_rationale": search.get('rationale', 'N/A'),
-                        "search_parameters": search.get('parameters', {}),
-                        "search_results": search.get('results', [])
-                    }
-                    logger.info(f"Preparing to update report for gap {gap_id} with payload:\n{json.dumps(update_payload, indent=2)}")
-                    print(f"Preparing to update report for gap {gap_id} with payload:\n{json.dumps(update_payload, indent=2)}")
-                    try:
-                        result = update_researcher_report(**update_payload)
-                        print(f"update_researcher_report returned: {result}")
-                        logger.info(f"update_researcher_report returned: {result}")
-                    except Exception as e:
-                        print(f"[ERROR] update_researcher_report failed for gap {gap_id}: {e}")
-                        logger.error(f"update_researcher_report failed for gap {gap_id}: {e}", exc_info=True)
-                        continue
+                logger.info(f"Preparing to update report for gap {gap_id} with payload:\n{json.dumps(update_payload['current_searches'], indent=2)}")
+                print(f"Preparing to update report for gap {gap_id} with payload:\n{json.dumps(update_payload['current_searches'], indent=2)}")
+                try:
+                    result = update_researcher_report(**update_payload)
+                    print(f"update_researcher_report returned: {result}")
+                    logger.info(f"update_researcher_report returned: {result}")
+                except Exception as e:
+                    print(f"[ERROR] update_researcher_report failed for gap {gap_id}: {e}")
+                    logger.error(f"update_researcher_report failed for gap {gap_id}: {e}", exc_info=True)
+                    continue
                 
+                print(f"--- Successfully completed research and reporting for gap: {gap_id} ---")
                 logger.info(f"--- Successfully completed research and reporting for gap: {gap_id} ---")
                 if "researcher_gaps_complete" not in state or state["researcher_gaps_complete"] is None:
                     state["researcher_gaps_complete"] = []
                 state["researcher_gaps_complete"].append(gap_id)
 
             except Exception as e:
+                print(f"[ERROR] An unexpected error occurred while processing gap {gap_id}: {e}")
                 logger.error(f"An unexpected error occurred while processing gap {gap_id}: {e}", exc_info=True)
                 continue
 
@@ -396,7 +406,7 @@ async def run_curator(state: AgentState):
 
     curator_tools = [t for t in all_tools if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]] + [load_report]
     curator_prompt = '''Your goal is to review and ingest new sources into the LightRAG knowledge base. 
-1.  **Load the researcher report**: Use the `load_report` tool with `researcher_report.json`.
+1.  **Load the researcher report**: Use the `load_report` tool with `researcher_report.json` and the logger in state variable {logger}.
 2.  **Process URLs**: For each URL in the report, fetch the content.
 3.  **Ingest Sources**: Ingest the successfully fetched and relevant content.
 4.  **Report Results**: Save a report of your actions to `curator_report.json`.'''
@@ -443,7 +453,7 @@ async def run_fixer(state: AgentState):
     fixer_prompt = '''Your goal is to correct data quality issues.
 1.  **Load Auditor's Report**: Load `auditor_report.json`.
 2.  **Create a Plan**: Create a step-by-step plan to correct the issues.
-3.  **Get Human Approval**: Use `human_approval` to get your plan approved.
+3.  **Get Human Approval**: Use `human_approval` to get your plan approved by calling the tool with the plan and the logger in state variable {logger}.
 4.  **Execute**: Execute the approved plan.
 5.  **Save Report**: Save a report of your actions to `fixer_report.json`.'''
 

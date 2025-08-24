@@ -19,5 +19,4 @@ class AgentState(TypedDict):
     researcher_report_id: Optional[str]
     researcher_gaps_todo: Optional[List[dict]]
     researcher_current_gap: Optional[dict]
-    researcher_current_search: Optional[dict]
     researcher_gaps_complete: Optional[List[str]]
