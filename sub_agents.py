@@ -367,8 +367,9 @@ async def run_researcher(state: AgentState):
                         json_string = json_output[json_start:json_end]
                         print(f"Extracted JSON string for gap {gap_id}:\n{json_string}")
                         logger.info(f"Extracted JSON string for gap {gap_id}:\n{json_string}")
-                        searches = json_string['searches']
-
+                        searches = json.loads(json_string).get("searches", [])
+                        print(f"Parsed searches for gap {gap_id}: {searches}")
+                        logger.info(f"Parsed searches for gap {gap_id}: {searches}")
                     else:
                         searches = []
                         print(f"[ERROR] No JSON object found in the output for gap {gap_id}: {json_output}, writing an empty searches list.")
