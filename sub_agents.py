@@ -1,9 +1,8 @@
 # sub_agents.py
-from langchain.agents import create_openai_tools_agent
+from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain.prompts import MessagesPlaceholder
 from langchain_core.tools import tool, ToolException
+from langchain_core.messages import AIMessage
 import json
 import os
 import re
@@ -393,74 +392,72 @@ def human_approval(plan: str) -> str:
 # --- Agent Node Functions ---
 
 async def analyst_agent_node(state: AgentState):
-    
-    """The primary node for the analyst agent's reasoning loop."""
-    
+    """This node encapsulates the entire agent execution loop."""
     logger = state['logger']
-    timestamp = state['timestamp']
-
-    report_id = f"ana_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
-    state["analyst_report_id"] = report_id
+    
+    if not state.get("analyst_report_id"):
+        timestamp = state['timestamp']
+        report_id = f"ana_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
+        state["analyst_report_id"] = report_id
+        status = f"Initialized analyst report with ID: {report_id}"
+        print(f"[INFO] {status}")
+        logger.info(status)
 
     with open("prompt_templates/analyst_prompt.txt", "r") as f:
         analyst_prompt_template = f.read()
-    
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", analyst_prompt_template),
-        MessagesPlaceholder(variable_name="messages"),
-        ("placeholder", "{agent_scratchpad}"),
-    ])
 
+    prompt = ChatPromptTemplate.from_template(analyst_prompt_template)
+    
     analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels", "google_search", "fetch"]]
 
-    status = f"--- Calling Analyst Agent with tools: {', '.join([t.name for t in analyst_tools])} ---"
-    print(status)
+    status = f"Attempting to invoke analyst agent executor with tools: {[t.name for t in analyst_tools]}"
+    print(f"[INFO] {status}")
     logger.info(status)
     try:
         agent_runnable = create_openai_tools_agent(state['model'], analyst_tools, prompt)
+        executor = AgentExecutor(agent=agent_runnable, tools=analyst_tools, verbose=True)
     except Exception as e:
         status = f"Failed to create agent runnable: {e}"
         print(f"[ERROR] {status}")
-        logger.error(status)
-        return {"status": "error", "message": str(e)}
+        logger.error(status, exc_info=True)
+        return {"status": status}
 
-    # The 'input' for the agent comes from the initial HumanMessage in the state
-    last_message = state['messages'][-1]
-
-    status = f"--- Invoking Analyst Agent with current messages ---"
-    print(status)
+    status = f"Attempting to run agent executor with input: {state['messages'][0].content}"
+    print(f"[INFO] {status}")
     logger.info(status)
     try:
-        result = await agent_runnable.ainvoke({
-            "input": last_message.content,
-            "messages": state['messages'],
-            "analyst_report_id": state.get("analyst_report_id", "") 
+        # The executor handles the entire loop of tool calls and reasoning.
+        result = await executor.ainvoke({
+            "input": state['messages'][0].content,
+            "analyst_report_id": state.get("analyst_report_id", "")
         })
+        final_output = result.get('output', '')
     except Exception as e:
-            status = f"Failed to invoke agent runnable: {e}"
-            print(f"[ERROR] {status}")
-            logger.error(status)
-            return {"status": "error", "message": str(e)}
+        status = f"AgentExecutor failed: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+        final_output = f"Error in Analyst Agent: {e}"
 
-    status = f"--- Analyst Agent returned result ---\n{result}"
-    print(status)
+    # The node returns a single AIMessage with the final report.
+    # This message is then passed to the next node in the graph.
+    status = f"Successfully generated analyst report: {final_output}"
+    print(f"[INFO] {status}")
     logger.info(status)
-    return {"messages": [result]}
+    return {"messages": state['messages'] + [AIMessage(content=final_output)]}
 
 def save_analyst_report_node(state: AgentState):
-    """
-    A dedicated node to save the final report.
-    This runs *after* the agent loop is finished.
-    """
+    """Saves the final report from the last AI message."""
     logger = state['logger']
-    final_message = state['messages'][-1]
+    final_message_from_agent = state['messages'][-1]
 
-    status = "--- Saving Analyst Report ---"
+    status = f"--- Saving Analyst Report ---\n{final_message_from_agent.content}"
     print(f"[INFO] {status}")
     logger.info(status)
 
     try:
-        report_json = _extract_and_clean_json_analyst(final_message.content)
+        report_json = _extract_and_clean_json_analyst(final_message_from_agent.content)
+        if 'report_id' not in report_json:
+            report_json['report_id'] = state.get('analyst_report_id', 'unknown_id')
         save_analyst_report(report_json)
         status = f"Successfully saved analyst report with ID {report_json.get('report_id')}"
     except (ValueError, KeyError) as e:
