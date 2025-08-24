@@ -5,7 +5,35 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool, ToolException
 import json
 import os
+import re
 from state import AgentState
+
+# --- Start of new helper function ---
+def _extract_and_clean_json(llm_output: str) -> dict:
+    """
+    Extracts, cleans, and reconstructs a valid JSON object from the LLM's output.
+    """
+    try:
+        # First, try to parse the whole output as-is
+        return json.loads(llm_output)
+    except json.JSONDecodeError:
+        # If that fails, try to find all search objects and reconstruct the JSON
+        try:
+            # This regex will find all dictionaries that look like search objects
+            searches = re.findall(r'\{\s*"rationale":.*?"results":.*?\}\s*\}', llm_output, re.DOTALL)
+            
+            if not searches:
+                raise ValueError("No search objects found in the output.")
+
+            # Reconstruct the JSON object
+            reconstructed_json_string = f'{{"searches": [{", ".join(searches)}]}}'
+            
+            return json.loads(reconstructed_json_string)
+
+        except (json.JSONDecodeError, ValueError) as e:
+            raise ValueError(f"Failed to parse or reconstruct JSON: {e}")
+# --- End of new helper function ---
+
 
 @tool
 def save_analyst_report(analyst_report: str) -> dict:
@@ -358,27 +386,20 @@ async def run_researcher(state: AgentState):
                 print(f"\nAgent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
                 logger.info(f"Agent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
                 
+                # --- Start of modified block ---
                 # The node, not the agent, saves the results
                 try:
-                    json_output = agent_result.get("output", "")
-                    json_start = json_output.find('{')
-                    json_end = json_output.rfind('}') + 1
-                    if json_start != -1 and json_end != 0:
-                        json_string = json_output[json_start:json_end]
-                        print(f"Extracted JSON string for gap {gap_id}:\n{json_string}")
-                        logger.info(f"Extracted JSON string for gap {gap_id}:\n{json_string}")
-                        searches = json.loads(json_string).get("searches", [])
-                        print(f"Parsed searches for gap {gap_id}: {searches}")
-                        logger.info(f"Parsed searches for gap {gap_id}: {searches}")
-                    else:
-                        searches = []
-                        print(f"[ERROR] No JSON object found in the output for gap {gap_id}: {json_output}, writing an empty searches list.")
-                        logger.error(f"No JSON object found in the output for gap {gap_id}: {json_output}, writing an empty searches list.")
+                    # Use the new helper function to extract and clean the JSON
+                    json_output = _extract_and_clean_json(agent_result.get("output", ""))
+                    searches = json_output.get("searches", [])
+                    print(f"Successfully parsed searches for gap {gap_id}: {searches}")
+                    logger.info(f"Successfully parsed searches for gap {gap_id}: {searches}")
 
-                except json.JSONDecodeError as e:
+                except (ValueError, json.JSONDecodeError) as e:
                     print(f"[ERROR] Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
                     logger.error(f"Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
                     continue
+                # --- End of modified block ---
 
                 logger.info(f"Preparing to update report for gap {gap_id} with payload")
                 print(f"Preparing to update report for gap {gap_id} with payload")
@@ -500,4 +521,3 @@ async def run_advisor(state: AgentState):
 
     logger.info(f"Advisor Agent finished with output: {result['output']}")
     return {"status": result['output']}
-
