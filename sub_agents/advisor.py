@@ -7,31 +7,7 @@ import json
 import os
 import re
 from state import AgentState
-
-@tool
-def load_report(filename: str) -> str:
-    """Loads the most recent report from a file in the state directory."""
-    import logging
-    logger = logging.getLogger('KnowledgeAgent')
-
-    filepath = f"state/{filename}"
-    if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
-        status = f"[ERROR] No report found at {filepath}."
-        print(status)
-        logger.warning(status)
-        return status
-    with open(filepath, "r") as f:
-        data = json.load(f)
-    if "reports" in data and isinstance(data["reports"], list) and data["reports"]:
-        status = f"Loaded report from {filepath}: {json.dumps(data['reports'][-1], indent=2)}"
-        print(status)
-        logger.info(status)
-        return json.dumps(data["reports"][-1])
-    else:
-        status = "[ERROR] No reports found in the file."
-        print(status)
-        logger.error(status)
-        return status
+from tools import load_report, _extract_and_clean_json
 
 async def advisor_agent_node(state: AgentState):
     print("--- Running Advisor Agent ---")
@@ -66,7 +42,7 @@ def save_advisor_report_node(state: AgentState):
     logger.info(status)
 
     try:
-        report_json = _extract_and_clean_json_advisor(final_message_from_agent.content)
+        report_json = _extract_and_clean_json(final_message_from_agent.content)
         if 'report_id' not in report_json:
             report_json['report_id'] = state.get('advisor_report_id', 'unknown_id')
         save_advisor_report.invoke({"advisor_report": json.dumps(report_json)})

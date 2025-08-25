@@ -7,6 +7,7 @@ import json
 import os
 import re
 from state import AgentState
+from tools import save_analyst_report
 
 def _extract_and_clean_json_analyst(llm_output: str) -> dict:
     """
@@ -49,53 +50,6 @@ def _extract_and_clean_json_analyst(llm_output: str) -> dict:
         print(status)
         logger.error(status)
         raise ValueError(status)
-
-@tool
-def save_analyst_report(analyst_report: str) -> dict:
-    """
-    Saves the analyst's report.
-    """
-    import logging
-    logger = logging.getLogger('KnowledgeAgent')
-
-    status = f"Save analyst report tool called ---"
-    print(status)
-    logger.info(status)
-    filepath = "state/analyst_report.json"
-    file_data = {"reports": []}
-    status = f"Loading existing analyst reports into memory from {filepath}"
-    print(status)
-    logger.info(status)
-    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-        with open(filepath, "r") as f:
-            file_data = json.load(f)
-    status = f"Appending new analyst report to data structure"
-    print(status)
-    logger.info(status)
-    try:
-        # Parse the incoming analyst_report string into a dictionary
-        report_object = json.loads(analyst_report)
-        file_data["reports"].append(report_object)
-    except json.JSONDecodeError as e:
-        status = f"Error parsing analyst report string: {e}"
-        print(status)
-        logger.error(status)
-        raise ToolException(status)
-    try:
-        with open(filepath, "w") as f:
-            json.dump(file_data, f, indent=2)
-    except Exception as e:
-        status = f"Error saving analyst report: {e}"
-        print(status)
-        logger.error(status)
-        raise ToolException(status)
-
-    status = f"Successfully wrote analyst report to {filepath}"
-    print(status)
-    logger.info(status)
-    return {
-        "analyst_status": status
-    }
 
 async def analyst_agent_node(state: AgentState):
     """This node encapsulates the entire agent execution loop."""

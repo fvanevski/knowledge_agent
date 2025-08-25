@@ -3,12 +3,12 @@
 import json
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.graph import StateGraph, END
-from analyst import analyst_agent_node, save_analyst_report_node
-from researcher import researcher_agent_node
-from curator import curator_agent_node
-from auditor import auditor_agent_node, save_auditor_report_node
-from fixer import fixer_agent_node, save_fixer_report_node
-from advisor import advisor_agent_node, save_advisor_report_node
+from sub_agents.analyst import analyst_agent_node, save_analyst_report_node
+from sub_agents.researcher import researcher_agent_node
+from sub_agents.curator import curator_agent_node
+from sub_agents.auditor import auditor_agent_node, save_auditor_report_node
+from sub_agents.fixer import fixer_agent_node, save_fixer_report_node
+from sub_agents.advisor import advisor_agent_node, save_advisor_report_node
 
 from state import AgentState
 
