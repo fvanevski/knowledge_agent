@@ -1,35 +1,35 @@
-# researcher.py
+# sub_agents/researcher.py
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import AIMessage
 from state import AgentState
 from db_utils import initialize_researcher, update_researcher_report, extract_and_clean_json
 
 async def researcher_agent_node(state: AgentState):
+    """The main node for the researcher workflow."""
     logger = state['logger']
+    report_id = state.get("researcher_report_id")
+    gaps_todo = state.get("researcher_gaps_todo", [])
+    gaps_complete = state.get("researcher_gaps_complete", [])
 
-    # One-time initialization of the researcher state
-    if not state.get("researcher_report_id"):
-        status = f"--- Researcher state not initialized. Calling initialize_researcher directly. ---"
-        print(status)
-        logger.info(status)
+    if not report_id:
         try:
-            init_result = initialize_researcher(state['timestamp'])
-            if isinstance(init_result, dict):
-                state["researcher_report_id"] = init_result.get("researcher_report_id")
-                state["researcher_gaps_todo"] = init_result.get("researcher_gaps_todo")
-                state["researcher_gaps_complete"] = []
-                status = f"--- Initialized researcher state: {init_result} ---"
-                print(f"[INFO] {status}")
-                logger.info(status)
+            init_result = initialize_researcher_report(state['timestamp'])
+            report_id = init_result.get("researcher_report_id")
+            gaps_todo = init_result.get("researcher_gaps_todo")
+            gaps_complete = []
+            status = f"--- Initialized researcher state: {init_result} ---"
+            print(f"[INFO] {status}")
+            logger.info(status)
         except Exception as e:
             status = f"Failed to initialize researcher state: {e}"
             print(f"[ERROR] {status}")
             logger.error(status)
-            return {"messages": state['messages'] + [AIMessage(content=status)]}
+            return {"status": status}
 
-    # Create the specialized agent for performing searches
-    searcher_prompt = ChatPromptTemplate.from_template(open("prompts/searcher_prompt.txt", "r").read())
+    with open("prompts/searcher_prompt.txt", "r") as f:
+        searcher_prompt_template = f.read()
+    
+    searcher_prompt = ChatPromptTemplate.from_template(searcher_prompt_template)
     searcher_tools = [tool for tool in state['mcp_tools'] if tool.name == 'google_search']
 
     status = f"Attempting to invoke searcher agent executor with tools: {searcher_tools}"
@@ -42,14 +42,12 @@ async def researcher_agent_node(state: AgentState):
         status = f"Failed to create searcher agent executor: {e}"
         print(f"[ERROR] {status}")
         logger.error(status)
-        return {"messages": state['messages'] + [AIMessage(content=status)]}
+        return {"status": status}
 
     # Main control loop, managed by the node
-    gaps_todo = state.get("researcher_gaps_todo", [])
     try:
         if isinstance(gaps_todo, list) and gaps_todo:
-            for current_gap in gaps_todo:
-                state['researcher_current_gap'] = current_gap
+            for current_gap in list(gaps_todo):
                 gap_id = current_gap['gap_id']
                 research_topic = current_gap['research_topic']
 
@@ -59,7 +57,7 @@ async def researcher_agent_node(state: AgentState):
 
                 try:
                     # Invoke the specialized agent for just ONE gap
-                    searcher_result = await executor.ainvoke({"input": research_topic})
+                    searcher_result = await executor.ainvoke({"input": current_gap['research_topic']})
                     status = f"Agent for gap {gap_id} finished. Raw output:\n{searcher_result.get('output')}"
                     print(f"[INFO] {status}")
                     logger.info(status)
@@ -83,19 +81,14 @@ async def researcher_agent_node(state: AgentState):
                     print(f"[INFO] {status}")
                     logger.info(status)
                     try:
-                        report_id = state['researcher_report_id']
-                        current_gap = state['researcher_current_gap']
-                        tool_input = {
-                            "report_id": report_id,
-                            "current_gap": current_gap,
-                            "search_results": searches
-                        }
-                        update_researcher_report(tool_input)
+                        update_researcher_report(report_id, gap_id, searches)
+                        gaps_complete.append(gap_id)
+                        gaps_todo = [g for g in gaps_todo if g.get("gap_id") != gap_id]
                         status = f"Updated researcher report for gap: {gap_id}"
                         print(f"[INFO] {status}")
                         logger.info(status)
                     except Exception as e:
-                        status = f"update_researcher_report failed for gap {gap_id}: {e}"
+                        status = f"Error processing gap {gap_id}: {e}"
                         print(f"[ERROR] {status}")
                         logger.error(status, exc_info=True)
                         continue
@@ -103,9 +96,6 @@ async def researcher_agent_node(state: AgentState):
                     status = f"--- Successfully completed research and report writing for gap: {gap_id} ---"
                     print(f"[INFO] {status}")
                     logger.info(status)
-                    if "researcher_gaps_complete" not in state or state["researcher_gaps_complete"] is None:
-                        state["researcher_gaps_complete"] = []
-                    state["researcher_gaps_complete"].append(gap_id)
 
                 except Exception as e:
                     status = f"An unexpected error occurred while processing gap {gap_id}: {e}"
@@ -115,12 +105,17 @@ async def researcher_agent_node(state: AgentState):
 
     except Exception as e:
             final_status = f"AgentExecutor failed: {e}"
-            print(f"[ERROR] {status}")
-            logger.error(status, exc_info=True)
+            print(f"[ERROR] {final_status}")
+            logger.error(final_status, exc_info=True)
 
     if not final_status:
-        final_status = f"Successfully and incrementally completed researcher report with ID {state['researcher_report_id']} and wrote report to researcher_report.json."
+        final_status = f"Successfully and incrementally completed researcher report with ID {report_id} and wrote report to DB."
         print(f"[INFO] {final_status}")
         logger.info(final_status)
 
-    return {"messages": state['messages'] + [AIMessage(content=final_status)]}
+    return {
+        "status": status,
+        "researcher_report_id": report_id,
+        "researcher_gaps_todo": gaps_todo,
+        "researcher_gaps_complete": gaps_complete
+    }

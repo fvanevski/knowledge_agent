@@ -4,9 +4,9 @@ import psycopg2
 import json
 from psycopg2.extras import Json
 from contextlib import contextmanager
+import json_repair
 
 # --- Database Connection ---
-
 @contextmanager
 def get_db_connection():
     """Provides a database connection using a context manager."""
@@ -17,34 +17,15 @@ def get_db_connection():
         conn.close()
 
 # --- Table Creation ---
-
 def create_tables():
-    """Creates the necessary tables in the database if they don't exist."""
+    """Creates all necessary tables in the database if they don't exist."""
     commands = (
-        """
-        CREATE TABLE IF NOT EXISTS analyst_reports (
-            id SERIAL PRIMARY KEY,
-            report_id VARCHAR(255) UNIQUE NOT NULL,
-            report JSONB,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS researcher_reports (
-            id SERIAL PRIMARY KEY,
-            report_id VARCHAR(255) UNIQUE NOT NULL,
-            report JSONB,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-        """,
-        """
-        CREATE TABLE IF NOT EXISTS curator_reports (
-            id SERIAL PRIMARY KEY,
-            report_id VARCHAR(255) UNIQUE NOT NULL,
-            report JSONB,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-        """
+        """CREATE TABLE IF NOT EXISTS analyst_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
+        """CREATE TABLE IF NOT EXISTS researcher_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
+        """CREATE TABLE IF NOT EXISTS curator_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
+        """CREATE TABLE IF NOT EXISTS auditor_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
+        """CREATE TABLE IF NOT EXISTS fixer_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
+        """CREATE TABLE IF NOT EXISTS advisor_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);"""
     )
     with get_db_connection() as conn:
         with conn.cursor() as cur:
@@ -63,26 +44,35 @@ def extract_and_clean_json(llm_output: str) -> dict:
         raise ValueError(f"Failed to repair or parse JSON: {e}")
 
 # --- Report Handling Functions ---
-
-def save_analyst_report(report_data: dict):
-    """Saves the analyst's report to the database."""
+def _save_report(table_name: str, report_data: dict):
+    """Generic function to save a report to a specified table."""
     report_id = report_data.get("report_id")
     if not report_id:
         raise ValueError("Report data must include a 'report_id'")
-    
-    ordered_report = {
-        "report_id": report_id,
-        "knowledge_base_summary": report_data.get("knowledge_base_summary"),
-        "identified_gaps": report_data.get("identified_gaps")
-    }
-    
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO analyst_reports (report_id, report) VALUES (%s, %s);",
-                (report_id, Json(ordered_report))
+                f"INSERT INTO {table_name} (report_id, report) VALUES (%s, %s);",
+                (report_id, Json(report_data))
             )
         conn.commit()
+
+def save_analyst_report(report_data: dict):
+    ordered_report = {
+        "report_id": report_data.get("report_id"),
+        "knowledge_base_summary": report_data.get("knowledge_base_summary"),
+        "identified_gaps": report_data.get("identified_gaps")
+    }
+    _save_report("analyst_reports", ordered_report)
+
+def save_auditor_report(report_data: dict):
+    _save_report("auditor_reports", report_data)
+
+def save_fixer_report(report_data: dict):
+    _save_report("fixer_reports", report_data)
+
+def save_advisor_report(report_data: dict):
+    _save_report("advisor_reports", report_data)
 
 def initialize_researcher(timestamp: str) -> dict:
     """Initializes the researcher's report in the database."""
