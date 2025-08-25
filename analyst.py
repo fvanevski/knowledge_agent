@@ -49,13 +49,11 @@ def _extract_and_clean_json_analyst(llm_output: str) -> dict:
         print(status)
         logger.error(status)
         raise ValueError(status)
+
 @tool
 def save_analyst_report(analyst_report: str) -> dict:
     """
     Saves the analyst's report.
-    This tool should be called once at the beginning of the analyst's workflow.
-    It reads the analyst's report, creates the initial structure for the analyst_report.json,
-    and returns the report_id and the list of gaps to be populated into the AgentState.
     """
     import logging
     logger = logging.getLogger('KnowledgeAgent')

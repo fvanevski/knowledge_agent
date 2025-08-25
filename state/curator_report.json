@@ -2,89 +2,18 @@
     "reports": [
         {
             "report_id": "cur_20250822_140000",
-            "timestamp": "2025-08-22T14:00:00Z",
-            "gaps": [
+            "urls_for_ingestion": [
+                "http://example.com/article1",
+                "http://example.com/article2"
+            ],
+            "url_ingestion_status": [
                 {
-                    "gap_id": "gap_midterm_2026_finance",
-                    "sources": [
-                        {
-                            "url": "https://rollcall.com/2025/01/07/the-2026-midterm-elections-are-just-around-the-corner/",
-                            "title": "The 2026 Midterm Elections Are Just Around the Corner",
-                            "snippet": "As the 2026 midterm elections approach, candidates are gearing up for what promises to be a highly competitive race.",
-                            "pagemap": {
-                                "metatags": [
-                                    {
-                                        "og:title": "The 2026 Midterm Elections Are Just Around the Corner",
-                                        "og:description": "As the 2026 midterm elections approach, candidates are gearing up for what promises to be a highly competitive race."
-                                    }
-                                ]
-                            },
-                            "rationale": "Provides a high-level overview of the upcoming 2026 midterm elections, directly addressing the core of the knowledge gap.",
-                            "ingestion_status": {
-                                "status": "success",
-                                "trace": null
-                            }
-                        },
-                        {
-                            "url": "https://www.fec.gov/resources/cms-content/documents/fy25-fec-congressional-budget-justification.pdf",
-                            "title": "FEC Congressional Budget Justification FY 2025",
-                            "snippet": "The Federal Election Commission's budget justification for the fiscal year 2025.",
-                            "pagemap": {
-                                "metatags": [
-                                    {
-                                        "og:title": "FEC Congressional Budget Justification FY 2025",
-                                        "og:description": "The Federal Election Commission's budget justification for the fiscal year 2025."
-                                    }
-                                ]
-                            },
-                            "rationale": "Official government source detailing financial outlooks and priorities relevant to campaign finance.",
-                            "ingestion_status": {
-                                "status": "success",
-                                "trace": null
-                            }
-                        }
-                    ]
+                    "url": "http://example.com/article1",
+                    "status": "success"
                 },
                 {
-                    "gap_id": "gap_doge_status_2025",
-                    "sources": [
-                        {
-                            "url": "https://www.opm.gov/policy-data-oversight/latest-memos",
-                            "title": "Department of Government Efficiency (DOGE) Update 2025",
-                            "snippet": "An update on the status and initiatives of the Department of Government Efficiency (DOGE) as of 2025.",
-                            "pagemap": {
-                                "metatags": [
-                                    {
-                                        "og:title": "Department of Government Efficiency (DOGE) Update 2025",
-                                        "og:description": "An update on the status and initiatives of the Department of Government Efficiency (DOGE) as of 2025."
-                                    }
-                                ]
-                            },
-                            "rationale": "Directly provides a status update on DOGE, which is the primary focus of the knowledge gap.",
-                            "ingestion_status": {
-                                "status": "success",
-                                "trace": null
-                            }
-                        },
-                        {
-                            "url": "https://www.usda.gov/media/press-releases/2025/02/14/secretary-rollins-pledges-greater-efficiency",
-                            "title": "Secretary Rollins Takes Bold Action to Stop Wasteful Spending and Optimize USDA to Better Serve American Agriculture",
-                            "snippet": "Today, U.S. Secretary of Agriculture Brooke Rollins addressed more than 400 USDA staffers, stakeholders and friends and pledged to bring greater efficiency...",
-                            "pagemap": {
-                                "metatags": [
-                                    {
-                                        "og:title": "Secretary Rollins Takes Bold Action to Stop Wasteful Spending",
-                                        "og:description": "In a bold move, Secretary Rollins has committed to eliminating wasteful spending within the USDA and optimizing its operations to better serve American agriculture."
-                                    }
-                                ]
-                            },
-                            "rationale": "Content is relevant to government efficiency, but the PDF is malformed and causes a parsing error during the ingestion process.",
-                            "ingestion_status": {
-                                "status": "fail",
-                                "trace": "Traceback (most recent call last):\n  File \"/app/ingestor/parsers/pdf_parser.py\", line 112, in parse\n    text_content = extract_text(pdf_file)\n  File \"/usr/local/lib/python3.12/site-packages/pdfminer/high_level.py\", line 85, in extract_text\n    if not doc.is_extractable:\npdfminer.pdfdocument.PDFEncryptionError: PDF document is encrypted."
-                            }
-                        }
-                    ]
+                    "url": "http://example.com/article2",
+                    "status": "failed"
                 }
             ]
         }

@@ -8,6 +8,48 @@ import os
 import re
 from state import AgentState
 
+def _extract_and_clean_json_curator(llm_output: str) -> dict:
+    """
+    Extracts and cleans a JSON object from the Curator LLM's output.
+    """
+    import logging
+    logger = logging.getLogger('KnowledgeAgent')
+
+    status = f"Extracting and cleaning JSON from curator LLM output"
+    print(status)
+    logger.info(status)
+    # Use a regex to find the JSON blob
+    match = re.search(r"\{.*\}", llm_output, re.DOTALL)
+    status = f"Regex match for JSON: {match}"
+    print(status)
+    logger.info(status)
+    if not match:
+        status = f"No JSON object found in the output."
+        print(status)
+        logger.error(status)
+        raise ValueError(status)
+
+    json_string = match.group(0)
+    status = f"Extracted JSON string: {json_string}"
+    print(status)
+    logger.info(status)
+
+    # Try to parse the JSON
+    status = f"Attempting to parse JSON: {json_string}"
+    print(status)
+    logger.info(status)
+    try:
+        parsed_json = json.loads(json_string)
+        status = f"Successfully parsed JSON: {parsed_json}"
+        print(status)
+        logger.info(status)
+        return parsed_json
+    except json.JSONDecodeError as e:
+        status = f"Failed to parse JSON: {e}"
+        print(status)
+        logger.error(status)
+        raise ValueError(status)
+    
 @tool
 def initialize_curator(timestamp: str) -> dict:
     """
@@ -63,16 +105,17 @@ def initialize_curator(timestamp: str) -> dict:
 
     new_report = {
         "report_id": report_id,
-        "searches": searches_todo
+        "urls_for_ingestion": [],
+        "url_ingestion_status": [],
     }
 
-    status = f"Initialized new researcher report:\n{json.dumps(new_report, indent=2)}"
+    status = f"Initialized new curator report:\n{json.dumps(new_report, indent=2)}"
     print(status)
     logger.info(status)
 
-    filepath = "state/researcher_report.json"
+    filepath = "state/curator_report.json"
 
-    status = f"Loading researcher reports into memory from {filepath}"
+    status = f"Loading curator reports into memory from {filepath}"
     print(status)
     logger.info(status)
     try:
@@ -85,7 +128,7 @@ def initialize_curator(timestamp: str) -> dict:
         raise ToolException(status)
 
     file_data = {"reports": []}
-    status = f"Loading researcher reports into data structure"
+    status = f"Loading curator reports into data structure"
     print(status)
     logger.info(status)
     try:
@@ -97,44 +140,105 @@ def initialize_curator(timestamp: str) -> dict:
         print(f"Error loading {filepath} into data structure: {e}")
         raise ToolException(f"Error loading {filepath} into data structure: {e}")
 
-    status = f"Loaded researcher reports from {filepath} into data structure"
+    status = f"Loaded curator reports from {filepath} into data structure"
     print(status)
     logger.info(status)
 
-    status = f"Appending new report to researcher reports data structure"
+    status = f"Appending new report to curator reports data structure"
     print(status)
     logger.info(status)
 
     try:
         file_data["reports"].append(new_report)
-        status = f"Successfully appended new report to researcher reports data structure"
+        status = f"Successfully appended new report to curator reports data structure"
         print(status)
         logger.info(status)
     except Exception as e:
-        status = f"[ERROR] Error appending new report to researcher reports data structure: {e}"
+        status = f"[ERROR] Error appending new report to curator reports data structure: {e}"
         logger.error(status)
         print(status)
         raise ToolException(status)
 
-    status = f"Writing updated researcher reports to {filepath}"
+    status = f"Writing updated curator reports to {filepath}"
     print(status)
     logger.info(status)
     try:
         with open(filepath, "w") as f:
             json.dump(file_data, f, indent=2)
-        status = f"Successfully wrote updated researcher reports to {filepath}"
+        status = f"Successfully wrote updated curator reports to {filepath}"
         print(status)
         logger.info(status)
     except Exception as e:
-        status = f"[ERROR] Error writing updated researcher reports to {filepath}: {e}"
+        status = f"[ERROR] Error writing updated curator reports to {filepath}: {e}"
         logger.error(status)
         print(status)
         raise ToolException(status)
 
     return {
-        "researcher_report_id": report_id,
-        "researcher_gaps_todo": gaps_to_do
+        "curator_report_id": report_id,
+        "curator_searches_todo": searches_todo
     }
+
+@tool
+def update_curator_report(report_id: str, current_search: dict, job: str, results: list) -> str:
+    """
+    Updates the curator's report with the job results (urls_for_ingestion, or url_ingestion_status) for a single search.
+    """
+    import logging
+    logger = logging.getLogger('KnowledgeAgent')
+
+    status = f"Updating curator report {report_id} with new results for: {job}.\n{results}"
+    print(status)
+    logger.info(status)
+
+    filepath = "state/curator_report.json"
+    try:
+        with open(filepath, "r") as f:
+            file_data = json.load(f)
+    except Exception as e:
+        status = f"[ERROR] Could not read or parse {filepath}. Error: {str(e)}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+
+    # Find the report index
+    report_list = file_data.get("reports", [])
+    report_index = next((i for i, r in enumerate(report_list) if r.get("report_id") == report_id), None)
+    if report_index is None:
+        status = f"[ERROR] Report with ID {report_id} not found."
+        print(status)
+        logger.error(status)
+        raise ToolException(status)
+
+    # Update the job results
+
+    status = f"Updating {report_id} in the data structure with the new results."
+    print(status)
+    logger.info(status)
+    try:
+        file_data['reports'][report_index][job].append(results)
+    except Exception as e:
+        status = f"[ERROR] Error updating {report_id} in the data structure: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+    status = f"Inserted {len(results)} results to {report_id} in the data structure."
+    print(status)
+    logger.info(status)
+
+    # Write back to file
+    try:
+        with open(filepath, "w") as f:
+            json.dump(file_data, f, indent=2)
+        status = f"Successfully wrote updated data for report {report_id} to {filepath}"
+        logger.info(status)
+        print(status)
+        return status
+    except Exception as e:
+        status = f"[ERROR] Failed to write to {filepath}: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
 
 @tool
 def load_report(filename: str) -> str:
@@ -164,6 +268,7 @@ def load_report(filename: str) -> str:
 async def curator_agent_node(state: AgentState):
     logger = state['logger']
 
+    # One-time initialization of the curator state
     if not state.get("curator_report_id"):
         status = f"--- Curator state not initialized. Calling initialize_curator. ---"
         print(status)
@@ -174,7 +279,7 @@ async def curator_agent_node(state: AgentState):
                 state["curator_report_id"] = init_result.get("curator_report_id")
                 state["curator_searches_todo"] = init_result.get("curator_searches_todo")
                 state["curator_current_search"] = {}
-                state["curator_urls_to_ingest"] = []
+                state["curator_urls_for_ingestion"] = []
                 status = f"--- Initialized curator state: {init_result} ---"
                 print(f"[INFO] {status}")
                 logger.info(status)
@@ -200,67 +305,149 @@ async def curator_agent_node(state: AgentState):
         return {"status": status}
 
     # Main control loop for search ranking
+    task = "Rank the search results in `{search_results}` based on relevance to the rationale in `{search_rationale}`"
+    searches_todo = state.get("curator_searches_todo", [])
+    if isinstance(searches_todo, list) and searches_todo:
+        for current_search in searches_todo:
+            state["curator_current_search"] = current_search
+            search_rationale = current_search['rationale']
+            search_results = current_search['results']
 
+            status = f"Processing search: {current_search['search_id']}"
+            print(f"[INFO] {status}")
+            logger.info(status)
+            try:
+                search_ranker_result = await executor.ainvoke({
+                    "input": task,
+                    "search_rationale": search_rationale,
+                    "search_results": search_results
+                })
+                status = f"Curator agent for search {current_search['search_id']} completed. Raw output: {search_ranker_result.get('output', '')}"
+                print(f"[INFO] {status}")
+                logger.info(status)
+                
+                try:
+                    json_output = _extract_and_clean_json_curator(search_ranker_result.get('output', ''))
+                    ranked_urls = json_output.get("urls_for_ingestion", [])
+                    state["curator_urls_for_ingestion"].extend(ranked_urls)
+                    status = f"Successfully parsed ranked URLs for search {current_search['search_id']}: {ranked_urls}."
+                    print(f"[INFO] {status}")
+                    logger.info(status)
+                except Exception as e:
+                    status = f"Failed to parse ranked URLs for search {current_search['search_id']}: {e}"
+                    print(f"[ERROR] {status}")
+                    logger.error(status, exc_info=True)
+                    continue
 
+                status = f"Preparing to update report for search {current_search['search_id']} with {len(ranked_urls)} URLs."
+                print(f"[INFO] {status}")
+                logger.info(status)
+                try:
+                    tool_input = {
+                        "curator_report_id": state.get("curator_report_id", ""),
+                        "current_search": current_search,
+                        "job": "urls_for_ingestion",
+                        "results": ranked_urls
+                    }
+                    result = update_curator_report.invoke(tool_input)
+                    status = f"Updated report for search {current_search['search_id']} with {len(ranked_urls)} URLs."
+                    print(f"[INFO] {status}")
+                    logger.info(status)
+                except Exception as e:
+                    status = f"Failed to update report for search {current_search['search_id']}: {e}"
+                    print(f"[ERROR] {status}")
+                    logger.error(status, exc_info=True)
+                    continue
+
+                status = f"Successfully updated report for search {current_search['search_id']} with {len(ranked_urls)} URLs."
+                print(f"[INFO] {status}")
+                logger.info(status)
+
+            except Exception as e:
+                status = f"AgentExecutor failed: {e}"
+                print(f"[ERROR] {status}")
+                logger.error(status, exc_info=True)
+                continue
+
+    status = f"Successfully completed ranking of all searches for report: {state.get('curator_report_id', 'unknown_id')}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+
+    # Create the specialized agent for url ingestion
     ingester_prompt = ChatPromptTemplate.from_template(open("prompts/ingester_prompt.txt", "r").read())
     ingester_tools = [t for t in state['mcp_tools'] if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]]
-
-    status = f"Attempting to invoke curator agent executor with tools: {[t.name for t in curator_tools]}"
+    status = f"Attempting to invoke url ingestion agent executor with tools: {ingester_tools}"
     print(f"[INFO] {status}")
     logger.info(status)
     try:
-        agent_runnable = create_openai_tools_agent(state['model'], curator_tools, prompt)
-        executor = AgentExecutor(agent=agent_runnable, tools=curator_tools, verbose=True)
+        agent_runnable = create_openai_tools_agent(state['model'], ingester_tools, ingester_prompt)
+        executor = AgentExecutor(agent=agent_runnable, tools=ingester_tools, verbose=True)
     except Exception as e:
-        status = f"Failed to create agent runnable: {e}"
+        status = f"Failed to create url ingestion agent executor: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
         return {"status": status}
 
-    status = f"Attempting to run agent executor with input: {state['messages'][0].content}"
+   # Main control for url ingestion
+
+    task = "Ingest the URLs in `{urls_for_ingestion}` and return the ingestion status for each URL."
+    status = f"Attempting to run agent executor for url ingestion"
     print(f"[INFO] {status}")
     logger.info(status)
     try:
         # The executor handles the entire loop of tool calls and reasoning.
-        result = await executor.ainvoke({
-            "input": state['messages'][0].content,
-            "curator_report_id": state.get("curator_report_id", "")
+        ingestion_result = await executor.ainvoke({
+            "input": task,
+            "urls_for_ingestion": state.get("curator_urls_for_ingestion", [])
         })
-        final_output = result.get('output', '')
+        status = f"Curator agent ingestion for report {state.get('curator_report_id', 'unknown_id')} completed.\nRaw output: {ingestion_result.get('output', '')}"
+        print(f"[INFO] {status}")
+        logger.info(status)
+        
+        try:
+            json_output = _extract_and_clean_json_curator(ingestion_result.get('output', ''))
+            url_ingestion_status = json_output.get("url_ingestion_status", [])
+            status = f"Successfully parsed URL ingestion status: {url_ingestion_status}."
+            print(f"[INFO] {status}")
+            logger.info(status)
+        except Exception as e:
+            status = f"Failed to parse URL ingestion status: {e}"
+            print(f"[ERROR] {status}")
+            logger.error(status, exc_info=True)
+            return {"status": status}
+
+        status = f"Preparing to update report: {state.get('curator_report_id', 'unknown_id')} with ingestion status for {len(url_ingestion_status)} URLs."
+        print(f"[INFO] {status}")
+        logger.info(status)
+        try:
+            tool_input = {
+                "curator_report_id": state.get("curator_report_id", ""),
+                "current_search": current_search,
+                "job": "url_ingestion_status",
+                "results": url_ingestion_status
+            }
+            ingestion_result = update_curator_report.invoke(tool_input)
+            status = f"Updated report {state.get('curator_report_id', 'unknown_id')} with ingestions status for {len(url_ingestion_status)} URLs."
+            print(f"[INFO] {status}")
+            logger.info(status)
+        except Exception as e:
+            status = f"Failed to update report {state.get('curator_report_id', 'unknown_id')}: {e}"
+            print(f"[ERROR] {status}")
+            logger.error(status, exc_info=True)
+            return {"status": status}
+
+        status = f"Successfully updated report {state.get('curator_report_id', 'unknown_id')} with {len(url_ingestion_status)} URLs."
+        print(f"[INFO] {status}")
+        logger.info(status)
     except Exception as e:
-        status = f"AgentExecutor failed: {e}"
+        status = f"Curator agent failed to run ingestion of ranked URLs: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
-        final_output = f"Error in Curator Agent: {e}"
+        return {"status": status}
 
     # The node returns a single AIMessage with the final report.
     # This message is then passed to the next node in the graph.
-    status = f"Successfully generated curator report: {final_output}"
+    status = f"Curator successfully ranked and ingested URLs, generating curator report summary written to file `state/curator_report.json`"
     print(f"[INFO] {status}")
     logger.info(status)
-    return {"messages": state['messages'] + [AIMessage(content=final_output)]}
-
-
-def save_curator_report_node(state: AgentState):
-    """Saves the final report from the last AI message."""
-    logger = state['logger']
-    final_message_from_agent = state['messages'][-1]
-
-    status = f"--- Saving Curator Report ---\n{final_message_from_agent.content}"
-    print(f"[INFO] {status}")
-    logger.info(status)
-
-    try:
-        report_json = _extract_and_clean_json_curator(final_message_from_agent.content)
-        if 'report_id' not in report_json:
-            report_json['report_id'] = state.get('curator_report_id', 'unknown_id')
-        save_curator_report.invoke({"curator_report": json.dumps(report_json)})
-        status = f"Successfully saved curator report with ID {report_json.get('report_id')}"
-        print(f"[INFO] {status}")
-        logger.info(status)
-    except (ValueError, KeyError) as e:
-        status = f"Error processing or saving curator report: {e}"
-        print(f"[ERROR] {status}")
-        logger.error(status, exc_info=True)
-
     return {"messages": state['messages'] + [AIMessage(content=status)]}

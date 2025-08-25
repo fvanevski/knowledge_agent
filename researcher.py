@@ -276,7 +276,7 @@ def load_report(filename: str) -> str:
 async def researcher_agent_node(state: AgentState):
     logger = state['logger']
 
-    # One-time initialization of the report and state
+    # One-time initialization of the researcher state
     if not state.get("researcher_report_id"):
         status = f"--- Researcher state not initialized. Calling initialize_researcher directly. ---"
         print(status)

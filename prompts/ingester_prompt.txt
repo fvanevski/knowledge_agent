@@ -13,8 +13,14 @@ System: You are an expert AI assistant tasked with ingesting the contents of URL
 **JSON Output Schema:**
 {{
   "url_ingestion_status": [
-    "url_1": "status_1",
-    "url_2", "status_2",
+    {{
+      "url": "url_1",
+      "status": "status_1"
+    }},
+    {{
+      "url": "url_2",
+      "status": "status_2"
+    }},
     ...
   ]
 }}

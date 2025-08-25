@@ -31,7 +31,7 @@ class AgentState(TypedDict):
     curator_report_id: Optional[str]
     curator_searches_todo: Optional[List[dict]]
     curator_current_search: Optional[dict]
-    curator_urls_to_ingest: Optional[List[str]]
+    curator_urls_for_ingestion: Optional[List[str]]
 
     # Fields for the auditor agent's stateful workflow
     auditor_report_id: Optional[str]

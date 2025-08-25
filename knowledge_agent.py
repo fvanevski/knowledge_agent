@@ -1,12 +1,11 @@
 # knowledge_agent.py
 
-import os
 import json
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.graph import StateGraph, END
 from analyst import analyst_agent_node, save_analyst_report_node
 from researcher import researcher_agent_node
-from curator import curator_agent_node, save_curator_report_node
+from curator import curator_agent_node
 from auditor import auditor_agent_node, save_auditor_report_node
 from fixer import fixer_agent_node, save_fixer_report_node
 from advisor import advisor_agent_node, save_advisor_report_node
@@ -36,7 +35,6 @@ def create_knowledge_agent_graph(task: str, all_tools: list):
         workflow.add_node("save_analyst_report", save_analyst_report_node)
         workflow.add_node("researcher", researcher_agent_node)
         workflow.add_node("curator", curator_agent_node)
-        workflow.add_node("save_curator_report", save_curator_report_node)
         workflow.add_node("auditor", auditor_agent_node)
         workflow.add_node("save_auditor_report", save_auditor_report_node)
         workflow.add_node("fixer", fixer_agent_node)
@@ -48,8 +46,7 @@ def create_knowledge_agent_graph(task: str, all_tools: list):
         workflow.add_edge("analyst", "save_analyst_report")
         workflow.add_edge("save_analyst_report", "researcher")
         workflow.add_edge("researcher", "curator")
-        workflow.add_edge("curator", "save_curator_report")
-        workflow.add_edge("save_curator_report", "auditor")
+        workflow.add_edge("curator", "auditor")
         workflow.add_edge("auditor", "save_auditor_report")
         workflow.add_edge("save_auditor_report", "fixer")
         workflow.add_edge("fixer", "save_fixer_report")
@@ -73,12 +70,10 @@ def create_knowledge_agent_graph(task: str, all_tools: list):
     
     elif task == "curate":
         workflow.add_node("curator", curator_agent_node)
-        workflow.add_node("save_curator_report", save_curator_report_node)
         
         workflow.set_entry_point("curator")
-        workflow.add_edge("curator", "save_curator_report")
-        workflow.add_edge("save_curator_report", END)
-    
+        workflow.add_edge("curator", END)
+
     elif task == "audit":
         workflow.add_node("auditor", auditor_agent_node)
         workflow.add_node("save_auditor_report", save_auditor_report_node)        
