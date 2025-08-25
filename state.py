@@ -26,3 +26,18 @@ class AgentState(TypedDict):
     researcher_gaps_todo: Optional[List[dict]]
     researcher_current_gap: Optional[dict]
     researcher_gaps_complete: Optional[List[str]]
+
+    # Fields for the curator agent's stateful workflow
+    curator_report_id: Optional[str]
+    curator_searches_todo: Optional[List[dict]]
+    curator_current_search: Optional[dict]
+    curator_urls_to_ingest: Optional[List[str]]
+
+    # Fields for the auditor agent's stateful workflow
+    auditor_report_id: Optional[str]
+
+    # Fields for the fixer agent's stateful workflow
+    fixer_report_id: Optional[str]
+
+    # Fields for the advisor agent's stateful workflow
+    advisor_report_id: Optional[str]

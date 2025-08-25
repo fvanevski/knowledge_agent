@@ -150,7 +150,7 @@ def save_analyst_report(analyst_report: str) -> dict:
     }
 
 @tool
-def initialize_researcher_report(timestamp: str) -> dict:
+def initialize_researcher(timestamp: str) -> dict:
     """
     Initializes the researcher's report.
     This tool should be called once at the beginning of the researcher's workflow.
@@ -341,6 +341,134 @@ def update_researcher_report(report_id: str, current_gap: dict, search_results: 
         raise ToolException(status)
 
 @tool
+def initialize_curator(timestamp: str) -> dict:
+    """
+    Initializes the curator's report.
+    This tool should be called once at the beginning of the curator's workflow.
+    It reads the researcher's report, creates the initial structure for the curator_report.json,
+    and returns the report_id and the list of searches to be populated into the AgentState.
+    """
+    import logging
+    logger = logging.getLogger('KnowledgeAgent')
+
+    status = f"Initialize curator tool called, attempting to load researcher_report.json ---"
+    print(status)
+    logger.info(status)
+
+    try:
+        researcher_report_str = load_report('researcher_report.json')
+    except Exception as e:
+        status = f"[ERROR] Error loading researcher report: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+
+    if "No report found" in researcher_report_str:
+        status = f"[ERROR] Researcher report not found."
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+
+    status = f"Loaded researcher report:\n{researcher_report_str}"
+    print(status)
+    logger.info(status)
+
+    researcher_report = json.loads(researcher_report_str)
+
+    report_id = f"cur_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
+    status = f"Generated curator report ID: {report_id}"
+    print(status)
+    logger.info(status)
+
+    searches_todo = []
+    for gap in researcher_report.get("gaps", []):
+        for search in gap.get("searches", []):
+            searches_todo.append({
+                "search_id": search["search_id"],
+                "rationale": search["rationale"],
+                "parameters": search["parameters"],
+                "results": search["results"]
+            })
+    status = f"Compiled {len(searches_todo)} searches to be curated."
+    print(f"[INFO] {status}")
+    logger.info(status)
+
+    new_report = {
+        "report_id": report_id,
+        "searches": searches_todo
+    }
+
+    status = f"Initialized new researcher report:\n{json.dumps(new_report, indent=2)}"
+    print(status)
+    logger.info(status)
+
+    filepath = "state/researcher_report.json"
+
+    status = f"Loading researcher reports into memory from {filepath}"
+    print(status)
+    logger.info(status)
+    try:
+        with open(filepath, "r") as f:
+            file_data = json.load(f)
+    except Exception as e:
+        status = f"[ERROR] Error reading {filepath}: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+
+    file_data = {"reports": []}
+    status = f"Loading researcher reports into data structure"
+    print(status)
+    logger.info(status)
+    try:
+        if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+            with open(filepath, "r") as f:
+                file_data = json.load(f)
+    except Exception as e:
+        logger.error(f"Error loading {filepath} into data structure: {e}")
+        print(f"Error loading {filepath} into data structure: {e}")
+        raise ToolException(f"Error loading {filepath} into data structure: {e}")
+
+    status = f"Loaded researcher reports from {filepath} into data structure"
+    print(status)
+    logger.info(status)
+
+    status = f"Appending new report to researcher reports data structure"
+    print(status)
+    logger.info(status)
+
+    try:
+        file_data["reports"].append(new_report)
+        status = f"Successfully appended new report to researcher reports data structure"
+        print(status)
+        logger.info(status)
+    except Exception as e:
+        status = f"[ERROR] Error appending new report to researcher reports data structure: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+
+    status = f"Writing updated researcher reports to {filepath}"
+    print(status)
+    logger.info(status)
+    try:
+        with open(filepath, "w") as f:
+            json.dump(file_data, f, indent=2)
+        status = f"Successfully wrote updated researcher reports to {filepath}"
+        print(status)
+        logger.info(status)
+    except Exception as e:
+        status = f"[ERROR] Error writing updated researcher reports to {filepath}: {e}"
+        logger.error(status)
+        print(status)
+        raise ToolException(status)
+
+    return {
+        "researcher_report_id": report_id,
+        "researcher_gaps_todo": gaps_to_do
+    }
+
+@tool
 def load_report(filename: str) -> str:
     """Loads the most recent report from a file in the state directory."""
     import logging
@@ -403,21 +531,17 @@ async def analyst_agent_node(state: AgentState):
         print(f"[INFO] {status}")
         logger.info(status)
 
-    with open("prompt_templates/analyst_prompt.txt", "r") as f:
-        analyst_prompt_template = f.read()
-
-    prompt = ChatPromptTemplate.from_template(analyst_prompt_template)
-    
+    analyst_prompt = ChatPromptTemplate.from_template(open("prompts/analyst_prompt.txt", "r").read())    
     analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels", "google_search", "fetch"]]
 
-    status = f"Attempting to invoke analyst agent executor with tools: {[t.name for t in analyst_tools]}"
+    status = f"Attempting to invoke analyst agent executor with tools: {analyst_tools}"
     print(f"[INFO] {status}")
     logger.info(status)
     try:
-        agent_runnable = create_openai_tools_agent(state['model'], analyst_tools, prompt)
+        agent_runnable = create_openai_tools_agent(state['model'], analyst_tools, analyst_prompt)
         executor = AgentExecutor(agent=agent_runnable, tools=analyst_tools, verbose=True)
     except Exception as e:
-        status = f"Failed to create agent runnable: {e}"
+        status = f"Failed to create agent executor: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
         return {"status": status}
@@ -427,11 +551,11 @@ async def analyst_agent_node(state: AgentState):
     logger.info(status)
     try:
         # The executor handles the entire loop of tool calls and reasoning.
-        result = await executor.ainvoke({
+        analyst_result = await executor.ainvoke({
             "input": state['messages'][0].content,
             "analyst_report_id": state.get("analyst_report_id", "")
         })
-        final_output = result.get('output', '')
+        final_output = analyst_result.get('output', '')
     except Exception as e:
         status = f"AgentExecutor failed: {e}"
         print(f"[ERROR] {status}")
@@ -458,104 +582,55 @@ def save_analyst_report_node(state: AgentState):
         report_json = _extract_and_clean_json_analyst(final_message_from_agent.content)
         if 'report_id' not in report_json:
             report_json['report_id'] = state.get('analyst_report_id', 'unknown_id')
-        save_analyst_report(report_json)
+        save_analyst_report.invoke({"analyst_report": json.dumps(report_json)})
         status = f"Successfully saved analyst report with ID {report_json.get('report_id')}"
+        print(f"[INFO] {status}")
+        logger.info(status)
     except (ValueError, KeyError) as e:
         status = f"Error processing or saving analyst report: {e}"
         print(f"[ERROR] {status}")
         logger.error(status)
     
-    print(f"[INFO] {status}")
-    logger.info(status)
-    return {"status": status}
+    return {"messages": state['messages'] + [AIMessage(content=status)]}
 
-# Legacy analyst agent function
-
-# async def run_analyst(state: AgentState):
-#     print("--- Running Analyst Node ---")
-#     logger = state['logger']
-#     timestamp = state['timestamp']
-
-#     # One-time initialization of the report and state
-#     if not state.get("analyst_report_id"):
-#         print("--- State not initialized. Performing initialization of analyst now. ---")
-#         try:
-#             report_id = f"ana_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
-#             if report_id:
-#                 state["analyst_report_id"] = report_id
-#                 logger.info(f"Successfully initialized report with ID: {state['analyst_report_id']}")
-#             else:
-#                 logger.error(f"Failed to initialize analyst report: {report_id}")
-#                 return {"status": f"Failed to initialize analyst report {report_id}."}
-#         except Exception as e:
-#             logger.error(f"Failed to initialize analyst report: {e}")
-#             return {"status": f"Failed to initialize analyst report {report_id}."}
-
-#     analyst_tools = [t for t in state['mcp_tools'] if t.name in ["query", "graphs_get", "graph_labels"]]
-
-#     with open("prompt_templates/analyst_prompt.txt", "r") as f:
-#         analyst_prompt = f.read()
-
-#     # Create the agent using the modern pattern
-#     analyst_agent = create_openai_tools_agent(
-#         state['model'], analyst_tools, ChatPromptTemplate.from_messages([("system", analyst_prompt), ("human", "{input}"), ("placeholder", "{agent_scratchpad}")])
-#     )
-#     agent_executor = AgentExecutor(agent=analyst_agent, tools=analyst_tools, handle_parsing_errors=True)
-    
-#     task_input = "Your task is to identify knowledge gaps. Begin now."
-
-#     analyst_result = await agent_executor.ainvoke({
-#         "input": task_input,
-#         "analyst_report_id": state['analyst_report_id']
-#     })
-
-#     try:
-#         json_output = _extract_and_clean_json_analyst(analyst_result.get("output", ""))
-#         print(f"Attempting to save analyst report:\n{json_output}")
-#         logger.info(f"Attempting to save analyst report:\n{json_output}")
-#         save_analyst_report(json.dumps(json_output))
-#     except Exception as e:
-#         print(f"[ERROR] Failed to process analyst result: {e}")
-#         logger.error(f"Failed to process analyst result: {e}")
-
-#     final_status = f"Successfully completed analysis and wrote report with ID {state['analyst_report_id']} to file `state/analyst_report.json`."
-#     print(final_status)
-#     logger.info(final_status)
-#     return {"status": final_status}
-
-async def run_researcher(state: AgentState):
-    """
-    The main node for the researcher workflow. It manages the state and calls
-    a specialized agent to perform research for each knowledge gap.
-    """
-    print("--- Running Researcher Node ---")
-    logger = state['logger']  # Ensure logger is retrieved from state
+async def researcher_agent_node(state: AgentState):
+    logger = state['logger']
 
     # One-time initialization of the report and state
     if not state.get("researcher_report_id"):
-        print("--- State not initialized. Calling initialize_researcher_report directly. ---")
+        status = f"--- Researcher state not initialized. Calling initialize_researcher directly. ---"
+        print(status)
+        logger.info(status)
         try:
-            init_result = initialize_researcher_report(state['timestamp'])
+            init_result = initialize_researcher(state['timestamp'])
             if isinstance(init_result, dict):
                 state["researcher_report_id"] = init_result.get("researcher_report_id")
                 state["researcher_gaps_todo"] = init_result.get("researcher_gaps_todo")
                 state["researcher_gaps_complete"] = []
-                print(f"Initialized researcher state: {init_result}")
-                logger.info(f"Successfully initialized report with ID: {state['researcher_report_id']} and gaps to research: {state['researcher_gaps_todo']}")
-            else:
-                print(f"[ERROR] Failed to initialize researcher report: {init_result}")
-                logger.error(f"Failed to initialize researcher report: {init_result}")
-                return {"status": f"Failed to initialize researcher report: {init_result}."}
+                status = f"--- Initialized researcher state: {init_result} ---"
+                print(f"[INFO] {status}")
+                logger.info(status)
         except Exception as e:
-            logger.error(f"Failed to initialize researcher report: {e}")
-            return {"status": f"Failed to initialize researcher report: {e}."}
+            status = f"Failed to initialize researcher state: {e}"
+            print(f"[ERROR] {status}")
+            logger.error(status)
+            return {"status": status}
 
     # Create the specialized agent for performing searches
-    with open("prompt_templates/search_agent_prompt.txt", "r") as f:
-        search_agent_prompt = f.read()
-    prompt = ChatPromptTemplate.from_template(search_agent_prompt)
-    search_tools = [tool for tool in state['mcp_tools'] if tool.name == 'google_search']
-    search_agent = create_openai_tools_agent(state['model'], search_tools, prompt)
+    searcher_prompt = ChatPromptTemplate.from_template(open("prompts/searcher_prompt.txt", "r").read())
+    searcher_tools = [tool for tool in state['mcp_tools'] if tool.name == 'google_search']
+
+    status = f"Attempting to invoke searcher agent executor with tools: {searcher_tools}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+    try:
+        agent_runnable = create_openai_tools_agent(state['model'], searcher_tools, searcher_prompt)
+        executor = AgentExecutor(agent=agent_runnable, tools=searcher_tools, verbose=True)
+    except Exception as e:
+        status = f"Failed to create searcher agent executor: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status)
+        return {"status": status}
 
     # Main control loop, managed by the node
     gaps_todo = state.get("researcher_gaps_todo", [])
@@ -565,30 +640,35 @@ async def run_researcher(state: AgentState):
             gap_id = current_gap['gap_id']
             research_topic = current_gap['research_topic']
 
-            print(f"\n--- Starting research for gap: {gap_id}, research topic: {research_topic} ---")
-            logger.info(f"--- Starting research for gap: {gap_id}, research topic: {research_topic} ---")
+            status = f"Starting research for gap: {gap_id}, research topic: {research_topic}"
+            print(f"[INFO] {status}")
+            logger.info(status)
 
             try:
                 # Invoke the specialized agent for just ONE gap
-                agent_result = await search_agent.ainvoke({"input": research_topic})
-                print(f"\nAgent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
-                logger.info(f"Agent for gap {gap_id} finished. Raw output:\n{agent_result.get('output')}")
-                
+                searcher_result = await executor.ainvoke({"input": research_topic})
+                status = f"Agent for gap {gap_id} finished. Raw output:\n{searcher_result.get('output')}"
+                print(f"[INFO] {status}")
+                logger.info(status)
+
                 # The node, not the agent, saves the results
                 try:
                     # Use the new helper function to extract and clean the JSON
-                    json_output = _extract_and_clean_json_researcher(agent_result.get("output", ""))
+                    json_output = _extract_and_clean_json_researcher(searcher_result.get("output", ""))
                     searches = json_output.get("searches", [])
-                    print(f"Successfully parsed searches for gap {gap_id}: {searches}")
-                    logger.info(f"Successfully parsed searches for gap {gap_id}: {searches}")
+                    status = f"Successfully parsed searches for gap {gap_id}: {searches}"
+                    print(f"[INFO] {status}")
+                    logger.info(status)
 
                 except (ValueError, json.JSONDecodeError) as e:
-                    print(f"[ERROR] Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
-                    logger.error(f"Agent for gap {gap_id} returned invalid JSON: {agent_result.get('output')}. Error: {e}")
+                    status = f"Agent for gap {gap_id} returned invalid JSON: {searcher_result.get('output')}. Error: {e}"
+                    print(f"[ERROR] {status}")
+                    logger.error(status)
                     continue
 
-                logger.info(f"Preparing to update report for gap {gap_id} with payload")
-                print(f"Preparing to update report for gap {gap_id} with payload")
+                status = f"Preparing to update report for gap {gap_id} with {len(searches)} searches"
+                print(f"[INFO] {status}")
+                logger.info(status)
                 try:
                     report_id = state['researcher_report_id']
                     current_gap = state['researcher_current_gap']
@@ -598,54 +678,138 @@ async def run_researcher(state: AgentState):
                         "search_results": searches
                     }
                     result = update_researcher_report.invoke(tool_input)
-                    print(f"update_researcher_report returned: {result}")
-                    logger.info(f"update_researcher_report returned: {result}")
+                    status = f"Updated researcher report for gap {gap_id}: {result}"
+                    print(f"[INFO] {status}")
+                    logger.info(status)
                 except Exception as e:
-                    print(f"[ERROR] update_researcher_report failed for gap {gap_id}: {e}")
-                    logger.error(f"update_researcher_report failed for gap {gap_id}: {e}", exc_info=True)
+                    status = f"update_researcher_report failed for gap {gap_id}: {e}"
+                    print(f"[ERROR] {status}")
+                    logger.error(status, exc_info=True)
                     continue
-                
-                print(f"--- Successfully completed research and report writing for gap: {gap_id} ---")
-                logger.info(f"--- Successfully completed research and report writing for gap: {gap_id} ---")
+
+                status = f"--- Successfully completed research and report writing for gap: {gap_id} ---"
+                print(f"[INFO] {status}")
+                logger.info(status)
                 if "researcher_gaps_complete" not in state or state["researcher_gaps_complete"] is None:
                     state["researcher_gaps_complete"] = []
                 state["researcher_gaps_complete"].append(gap_id)
 
             except Exception as e:
-                print(f"[ERROR] An unexpected error occurred while processing gap {gap_id}: {e}")
-                logger.error(f"An unexpected error occurred while processing gap {gap_id}: {e}", exc_info=True)
+                status = f"An unexpected error occurred while processing gap {gap_id}: {e}"
+                print(f"[ERROR] {status}")
+                logger.error(status, exc_info=True)
                 continue
 
 
     final_status = f"Successfully and incrementally completed researcher report with ID {state['researcher_report_id']} and wrote report to researcher_report.json."
     logger.info(final_status)
-    return {"status": final_status}
+    return {"messages": state['messages'] + [AIMessage(content=final_status)]}
 
-async def run_curator(state: AgentState):
-    print("--- Running Curator Agent ---")
-    all_tools = state['mcp_tools']
-    model = state['model']
+async def curator_agent_node(state: AgentState):
     logger = state['logger']
-    timestamp = state['timestamp']
 
-    curator_tools = [t for t in all_tools if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]] + [load_report]
-    curator_prompt = '''Your goal is to review and ingest new sources into the LightRAG knowledge base. 
-1.  **Load the researcher report**: Use the `load_report` tool with `researcher_report.json`.
-2.  **Process URLs**: For each URL in the report, fetch the content.
-3.  **Ingest Sources**: Ingest the successfully fetched and relevant content.
-4.  **Report Results**: Save a report of your actions to `curator_report.json`.'''
+    if not state.get("curator_report_id"):
+        status = f"--- Curator state not initialized. Calling initialize_curator. ---"
+        print(status)
+        logger.info(status)
+        try:
+            init_result = initialize_curator(state['timestamp'])
+            if isinstance(init_result, dict):
+                state["curator_report_id"] = init_result.get("curator_report_id")
+                state["curator_searches_todo"] = init_result.get("curator_searches_todo")
+                state["curator_current_search"] = {}
+                state["curator_urls_to_ingest"] = []
+                status = f"--- Initialized curator state: {init_result} ---"
+                print(f"[INFO] {status}")
+                logger.info(status)
+        except Exception as e:
+            status = f"Failed to initialize curator report: {e}"
+            print(f"[ERROR] {status}")
+            logger.error(status, exc_info=True)
+            return {"status": status}
 
-    prompt = ChatPromptTemplate.from_template(curator_prompt)
-    agent_executor = create_openai_tools_agent(model, curator_tools, prompt)
+    # Create the specialized agent for search ranking
+    search_ranker_prompt = ChatPromptTemplate.from_template(open("prompts/search_ranker_prompt.txt", "r").read())
+    search_ranker_tools = [t for t in state['mcp_tools'] if t.name in ["google_search", "fetch"]]
+    status = f"Attempting to invoke search ranker agent executor with tools: {search_ranker_tools}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+    try:
+        agent_runnable = create_openai_tools_agent(state['model'], search_ranker_tools, search_ranker_prompt)
+        executor = AgentExecutor(agent=agent_runnable, tools=search_ranker_tools, verbose=True)
+    except Exception as e:
+        status = f"Failed to create search ranker agent executor: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+        return {"status": status}
 
-    task_input = "Your task is to curate the latest research report. Begin now."
+    # Main control loop for search ranking
 
-    result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
-    logger.info(f"Curator Agent finished with output: {result['output']}")
-    return {"status": result['output']}
+    ingester_prompt = ChatPromptTemplate.from_template(open("prompts/ingester_prompt.txt", "r").read())
+    ingester_tools = [t for t in state['mcp_tools'] if t.name in ["fetch", "documents_upload_file", "documents_upload_files", "documents_insert_text", "documents_pipeline_status"]]
 
-async def run_auditor(state: AgentState):
+    status = f"Attempting to invoke curator agent executor with tools: {[t.name for t in curator_tools]}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+    try:
+        agent_runnable = create_openai_tools_agent(state['model'], curator_tools, prompt)
+        executor = AgentExecutor(agent=agent_runnable, tools=curator_tools, verbose=True)
+    except Exception as e:
+        status = f"Failed to create agent runnable: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+        return {"status": status}
+
+    status = f"Attempting to run agent executor with input: {state['messages'][0].content}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+    try:
+        # The executor handles the entire loop of tool calls and reasoning.
+        result = await executor.ainvoke({
+            "input": state['messages'][0].content,
+            "curator_report_id": state.get("curator_report_id", "")
+        })
+        final_output = result.get('output', '')
+    except Exception as e:
+        status = f"AgentExecutor failed: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+        final_output = f"Error in Curator Agent: {e}"
+
+    # The node returns a single AIMessage with the final report.
+    # This message is then passed to the next node in the graph.
+    status = f"Successfully generated curator report: {final_output}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+    return {"messages": state['messages'] + [AIMessage(content=final_output)]}
+
+
+def save_curator_report_node(state: AgentState):
+    """Saves the final report from the last AI message."""
+    logger = state['logger']
+    final_message_from_agent = state['messages'][-1]
+
+    status = f"--- Saving Curator Report ---\n{final_message_from_agent.content}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+
+    try:
+        report_json = _extract_and_clean_json_curator(final_message_from_agent.content)
+        if 'report_id' not in report_json:
+            report_json['report_id'] = state.get('curator_report_id', 'unknown_id')
+        save_curator_report.invoke({"curator_report": json.dumps(report_json)})
+        status = f"Successfully saved curator report with ID {report_json.get('report_id')}"
+        print(f"[INFO] {status}")
+        logger.info(status)
+    except (ValueError, KeyError) as e:
+        status = f"Error processing or saving curator report: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+
+    return {"messages": state['messages'] + [AIMessage(content=status)]}
+
+async def auditor_agent_node(state: AgentState):
     print("--- Running Auditor Agent ---")
     all_tools = state['mcp_tools']
     model = state['model']
@@ -666,9 +830,33 @@ async def run_auditor(state: AgentState):
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
     
     logger.info(f"Auditor Agent finished with output: {result['output']}")
-    return {"status": result['output']}
+    return {"messages": state['messages'] + [AIMessage(content=result['output'])]}
 
-async def run_fixer(state: AgentState):
+def save_auditor_report_node(state: AgentState):
+    """Saves the final report from the last AI message."""
+    logger = state['logger']
+    final_message_from_agent = state['messages'][-1]
+
+    status = f"--- Saving Auditor Report ---\n{final_message_from_agent.content}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+
+    try:
+        report_json = _extract_and_clean_json_auditor(final_message_from_agent.content)
+        if 'report_id' not in report_json:
+            report_json['report_id'] = state.get('auditor_report_id', 'unknown_id')
+        save_auditor_report.invoke({"auditor_report": json.dumps(report_json)})
+        status = f"Successfully saved auditor report with ID {report_json.get('report_id')}"
+        print(f"[INFO] {status}")
+        logger.info(status)
+    except (ValueError, KeyError) as e:
+        status = f"Error processing or saving auditor report: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+
+    return {"messages": state['messages'] + [AIMessage(content=status)]}
+
+async def fixer_agent_node(state: AgentState):
     print("--- Running Fixer Agent ---")
     all_tools = state['mcp_tools']
     model = state['model']
@@ -691,10 +879,33 @@ async def run_fixer(state: AgentState):
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
     logger.info(f"Fixer Agent finished with output: {result['output']}")
-    return {"status": result['output']}
+    return {"messages": state['messages'] + [AIMessage(content=result['output'])]}
 
+def save_fixer_report_node(state: AgentState):
+    """Saves the final report from the last AI message."""
+    logger = state['logger']
+    final_message_from_agent = state['messages'][-1]
 
-async def run_advisor(state: AgentState):
+    status = f"--- Saving Fixer Report ---\n{final_message_from_agent.content}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+
+    try:
+        report_json = _extract_and_clean_json_fixer(final_message_from_agent.content)
+        if 'report_id' not in report_json:
+            report_json['report_id'] = state.get('fixer_report_id', 'unknown_id')
+        save_fixer_report.invoke({"fixer_report": json.dumps(report_json)})
+        status = f"Successfully saved fixer report with ID {report_json.get('report_id')}"
+        print(f"[INFO] {status}")
+        logger.info(status)
+    except (ValueError, KeyError) as e:
+        status = f"Error processing or saving fixer report: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+
+    return {"messages": state['messages'] + [AIMessage(content=status)]}
+
+async def advisor_agent_node(state: AgentState):
     print("--- Running Advisor Agent ---")
     all_tools = state['mcp_tools']
     model = state['model']
@@ -715,4 +926,28 @@ async def run_advisor(state: AgentState):
     result = await agent_executor.ainvoke({"input": task_input, "timestamp": timestamp})
 
     logger.info(f"Advisor Agent finished with output: {result['output']}")
-    return {"status": result['output']}
+    return {"messages": state['messages'] + [AIMessage(content=result['output'])]}
+
+def save_advisor_report_node(state: AgentState):
+    """Saves the final report from the last AI message."""
+    logger = state['logger']
+    final_message_from_agent = state['messages'][-1]
+
+    status = f"--- Saving Advisor Report ---\n{final_message_from_agent.content}"
+    print(f"[INFO] {status}")
+    logger.info(status)
+
+    try:
+        report_json = _extract_and_clean_json_advisor(final_message_from_agent.content)
+        if 'report_id' not in report_json:
+            report_json['report_id'] = state.get('advisor_report_id', 'unknown_id')
+        save_advisor_report.invoke({"advisor_report": json.dumps(report_json)})
+        status = f"Successfully saved advisor report with ID {report_json.get('report_id')}"
+        print(f"[INFO] {status}")
+        logger.info(status)
+    except (ValueError, KeyError) as e:
+        status = f"Error processing or saving advisor report: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status, exc_info=True)
+
+    return {"messages": state['messages'] + [AIMessage(content=status)]}
