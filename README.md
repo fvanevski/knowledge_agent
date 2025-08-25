@@ -5,7 +5,6 @@ An autonomous AI agent for intelligently updating, maintaining, and curating a [
 ## Table of Contents
 
 - [About The Project](#about-the-project)
-- [File Structure](#file-structure)
 - [Architecture](#architecture)
   - [Frameworks and Libraries](#frameworks-and-libraries)
   - [Agent Roles](#agent-roles)
@@ -27,42 +26,6 @@ The Knowledge Agent is designed to solve the challenges of maintaining a static 
 - **Incompleteness:** The knowledge base is limited to manually selected documents, creating information silos and knowledge gaps.
 - **High Maintenance Overhead:** The manual effort required to find new sources, ingest them, and fix data quality issues is significant and does not scale.
 - **Data Quality Degradation:** As more data is added, inconsistencies and duplicates can accumulate, reducing the reliability of RAG outputs and polluting the knowledge graph.
-
-## File Structure
-
-```
-/workspace/knowledge_agent/
-├───.gitignore
-├───.python-version
-├───db_utils.py
-├───knowledge_agent.py
-├───mcp.json
-├───pyproject.toml
-├───README.md
-├───run.py
-├───state.py
-├───tools.py
-├───.git/...
-├───.venv/...
-├───logs/
-├───prompts/
-│   ├───advisor_prompt.txt
-│   ├───analyst_prompt.txt
-│   ├───auditor_prompt.txt
-│   ├───fixer_prompt.txt
-│   ├───ingester_prompt.txt
-│   ├───researcher_prompt.txt
-│   ├───search_ranker_prompt.txt
-│   └───searcher_prompt.txt
-└───sub_agents/
-    ├───__init__.py
-    ├───advisor.py
-    ├───analyst.py
-    ├───auditor.py
-    ├───curator.py
-    ├───fixer.py
-    └───researcher.py
-```
 
 ## Architecture
 
