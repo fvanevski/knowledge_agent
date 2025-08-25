@@ -7,7 +7,7 @@ import json
 import os
 import re
 from state import AgentState
-from tools import load_report, human_approval, _extract_and_clean_json
+from tools import load_report, human_approval, extract_and_clean_json
 
 
 async def fixer_agent_node(state: AgentState):
@@ -45,7 +45,7 @@ def save_fixer_report_node(state: AgentState):
     logger.info(status)
 
     try:
-        report_json = _extract_and_clean_json(final_message_from_agent.content)
+        report_json = extract_and_clean_json(final_message_from_agent.content)
         if 'report_id' not in report_json:
             report_json['report_id'] = state.get('fixer_report_id', 'unknown_id')
         save_fixer_report.invoke({"fixer_report": json.dumps(report_json)})

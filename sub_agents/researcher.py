@@ -7,56 +7,7 @@ import json
 import os
 import re
 from state import AgentState
-from tools import initialize_researcher, update_researcher_report
-
-def _extract_and_clean_json_researcher(llm_output: str) -> dict:
-    """
-    Extracts, cleans, and reconstructs a valid JSON object from the LLM's output.
-    """
-    import logging
-    logger = logging.getLogger('KnowledgeAgent')
-    
-    status = f"Extracting and cleaning JSON from researcher LLM output"
-    print(status)
-    logger.info(status)
-    try:
-        # First, try to parse the whole output as-is
-        return json.loads(llm_output)
-    except json.JSONDecodeError:
-        # If that fails, try to find all search objects and reconstruct the JSON
-        status = f"Initial JSON parsing failed, attempting to reconstruct JSON from partial outputs."
-        print(status)
-        logger.info(status)
-        try:
-            # This regex will find all dictionaries that look like search objects
-            searches = re.findall(r'\{\s*"rationale":.*?"results":.*?\}\s*\}', llm_output, re.DOTALL)
-            status = f"Found {len(searches)} search objects in the output."
-            print(status)
-            logger.info(status)
-
-            if not searches:
-                # If no search objects are found, return a valid JSON with an empty list
-                status = f"No search objects found in the output, returning empty searches list."
-                print(status)
-                logger.info(status)
-                return {"searches": []}
-
-            # Reconstruct the JSON object
-            status = f"Reconstructing JSON from found search objects."
-            print(status)
-            logger.info(status)
-            reconstructed_json_string = f'{{"searches": [{", ".join(searches)}]}}'
-            
-            status = f"Reconstructed JSON: {reconstructed_json_string}"
-            print(status)
-            logger.info(status)
-            return json.loads(reconstructed_json_string)
-
-        except (json.JSONDecodeError, ValueError) as e:
-            status = f"Failed to parse or reconstruct JSON: {e}"
-            print(status)
-            logger.error(status)
-            raise ValueError(status)
+from tools import initialize_researcher, update_researcher_report, extract_and_clean_json
 
 async def researcher_agent_node(state: AgentState):
     logger = state['logger']
@@ -119,7 +70,7 @@ async def researcher_agent_node(state: AgentState):
                 # The node, not the agent, saves the results
                 try:
                     # Use the new helper function to extract and clean the JSON
-                    json_output = _extract_and_clean_json_researcher(searcher_result.get("output", ""))
+                    json_output = extract_and_clean_json(searcher_result.get("output", ""))
                     searches = json_output.get("searches", [])
                     status = f"Successfully parsed searches for gap {gap_id}: {searches}"
                     print(f"[INFO] {status}")

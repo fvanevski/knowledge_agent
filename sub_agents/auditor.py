@@ -7,7 +7,7 @@ import json
 import os
 import re
 from state import AgentState
-from tools import load_report, _extract_and_clean_json
+from tools import load_report, extract_and_clean_json
 
 async def auditor_agent_node(state: AgentState):
     print("--- Running Auditor Agent ---")
@@ -42,7 +42,7 @@ def save_auditor_report_node(state: AgentState):
     logger.info(status)
 
     try:
-        report_json = _extract_and_clean_json(final_message_from_agent.content)
+        report_json = extract_and_clean_json(final_message_from_agent.content)
         if 'report_id' not in report_json:
             report_json['report_id'] = state.get('auditor_report_id', 'unknown_id')
         save_auditor_report.invoke({"auditor_report": json.dumps(report_json)})

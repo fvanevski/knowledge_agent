@@ -7,49 +7,7 @@ import json
 import os
 import re
 from state import AgentState
-from tools import initialize_curator, update_curator_report
-
-def _extract_and_clean_json_curator(llm_output: str) -> dict:
-    """
-    Extracts and cleans a JSON object from the Curator LLM's output.
-    """
-    import logging
-    logger = logging.getLogger('KnowledgeAgent')
-
-    status = f"Extracting and cleaning JSON from curator LLM output"
-    print(status)
-    logger.info(status)
-    # Use a regex to find the JSON blob
-    match = re.search(r"\{.*\}", llm_output, re.DOTALL)
-    status = f"Regex match for JSON: {match}"
-    print(status)
-    logger.info(status)
-    if not match:
-        status = f"No JSON object found in the output."
-        print(status)
-        logger.error(status)
-        raise ValueError(status)
-
-    json_string = match.group(0)
-    status = f"Extracted JSON string: {json_string}"
-    print(status)
-    logger.info(status)
-
-    # Try to parse the JSON
-    status = f"Attempting to parse JSON: {json_string}"
-    print(status)
-    logger.info(status)
-    try:
-        parsed_json = json.loads(json_string)
-        status = f"Successfully parsed JSON: {parsed_json}"
-        print(status)
-        logger.info(status)
-        return parsed_json
-    except json.JSONDecodeError as e:
-        status = f"Failed to parse JSON: {e}"
-        print(status)
-        logger.error(status)
-        raise ValueError(status)
+from tools import initialize_curator, update_curator_report, extract_and_clean_json
     
 async def curator_agent_node(state: AgentState):
     logger = state['logger']
@@ -113,7 +71,7 @@ async def curator_agent_node(state: AgentState):
                 logger.info(status)
                 
                 try:
-                    json_output = _extract_and_clean_json_curator(search_ranker_result.get('output', ''))
+                    json_output = extract_and_clean_json(search_ranker_result.get('output', ''))
                     ranked_urls = json_output.get("urls_for_ingestion", [])
                     state["curator_urls_for_ingestion"].extend(ranked_urls)
                     status = f"Successfully parsed ranked URLs for search {current_search['search_id']}: {ranked_urls}."
@@ -191,7 +149,7 @@ async def curator_agent_node(state: AgentState):
         logger.info(status)
         
         try:
-            json_output = _extract_and_clean_json_curator(ingestion_result.get('output', ''))
+            json_output = extract_and_clean_json(ingestion_result.get('output', ''))
             url_ingestion_status = json_output.get("url_ingestion_status", [])
             status = f"Successfully parsed URL ingestion status: {url_ingestion_status}."
             print(f"[INFO] {status}")

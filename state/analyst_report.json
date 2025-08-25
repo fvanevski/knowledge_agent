@@ -57,206 +57,112 @@
       ]
     },
     {
-      "report_id": "ana_20250824_122953",
+      "report_id": "ana_20250824_222046",
       "knowledge_base_summary": {
-        "summary": "The LightRAG knowledge base is a large, heterogeneous collection that covers primarily U.S. political and policy topics (e.g., federal agencies, legislation, election data), technology and cryptocurrency discussions, social issues such as inequality and civil rights, environmental/climate content, and foundational material on RAG architecture and retrieval methods. The graph labels reveal an emphasis on domestic governance, economic policy, and contemporary socio\u2011political debates, with a noticeable scarcity of international perspectives, technical implementation details, evaluation metrics, and practical developer guidance.",
-        "themes": [
-          {
-            "theme_id": "T1",
-            "description": "U.S. Political & Policy Landscape"
-          },
-          {
-            "theme_id": "T2",
-            "description": "Technology, Crypto, and Digital Infrastructure"
-          },
-          {
-            "theme_id": "T3",
-            "description": "Social Justice, Inequality, and Civil Rights"
-          },
-          {
-            "theme_id": "T4",
-            "description": "Environmental & Climate Policy"
-          },
-          {
-            "theme_id": "T5",
-            "description": "Knowledge\u2011Base Architecture & Retrieval Techniques"
-          },
-          {
-            "theme_id": "T6",
-            "description": "Evaluation, Metrics, and Best Practices"
-          }
-        ]
+        "summary": "The LightRAG knowledge base contains a broad collection of labeled entities and topics primarily focused on U.S. politics, policy, social justice, economic issues, technology (especially crypto), health & welfare programs, civil rights organizations, and contemporary political movements. The labels reflect extensive coverage of historical legislation, current executive orders, election-related events, demographic studies, and public sector initiatives. However, the dataset exhibits uneven depth across emerging domains such as artificial intelligence governance, climate policy, data privacy regulation, pandemic response, and global economic inequality."
       },
+      "themes": [
+        {
+          "theme_id": "T1",
+          "description": "U.S. Political Landscape \u2013 elections, parties, congressional actions, executive orders, campaign finance"
+        },
+        {
+          "theme_id": "T2",
+          "description": "Social Justice & Civil Rights \u2013 civil liberties organizations, anti\u2011discrimination policies, racial equity studies, LGBTQ+ rights"
+        },
+        {
+          "theme_id": "T3",
+          "description": "Economic Policy & Fiscal Matters \u2013 tax legislation, budget proposals, debt management, welfare programs (SNAP, Medicaid) and labor market data"
+        },
+        {
+          "theme_id": "T4",
+          "description": "Technology & Digital Assets \u2013 Big Tech firms, cryptocurrency regulation, blockchain developments, digital privacy concerns"
+        },
+        {
+          "theme_id": "T5",
+          "description": "Health & Public Welfare \u2013 nutrition assistance, child health studies, pandemic response, mental health initiatives"
+        },
+        {
+          "theme_id": "T6",
+          "description": "Environmental & Energy Issues \u2013 limited coverage of climate change, renewable energy policies, and sustainability programs"
+        },
+        {
+          "theme_id": "T7",
+          "description": "International Relations & Global Policy \u2013 foreign aid, trade agreements, geopolitical events"
+        }
+      ],
       "identified_gaps": [
         {
           "gap_id": "G1",
-          "description": "Limited coverage of non\u2011U.S. policy documents and global governance contexts.",
-          "research_topic": "Integrate international political datasets (e.g., EU directives, UN resolutions) to broaden the geographic scope."
+          "description": "Absence of comprehensive coverage on artificial intelligence governance, including AI regulation frameworks, ethics guidelines, and industry standards.",
+          "research_topic": "Updated literature review on U.S. and international AI regulatory initiatives post-2024"
         },
         {
           "gap_id": "G2",
-          "description": "Sparse documentation on AI ethics, bias mitigation, and safety guidelines for LightRAG usage.",
-          "research_topic": "Develop a comprehensive ethical framework and best\u2011practice guide for deploying LightRAG in sensitive domains."
+          "description": "Limited representation of climate change policy and renewable energy transition topics within the knowledge base.",
+          "research_topic": "Comprehensive mapping of federal and state climate legislation and clean\u2011energy incentives enacted after 2023"
         },
         {
           "gap_id": "G3",
-          "description": "Absence of standardized performance benchmarks comparing LightRAG to other RAG systems.",
-          "research_topic": "Design benchmark suites (e.g., retrieval latency, answer accuracy) and publish comparative results."
+          "description": "Missing data on data privacy, surveillance technology regulation, and digital rights protections in recent years.",
+          "research_topic": "Synthesis of U.S. federal data privacy laws and emerging court rulings since 2022"
         },
         {
           "gap_id": "G4",
-          "description": "Insufficient detail on incremental update mechanisms and how the system handles evolving data without full re\u2011indexing.",
-          "research_topic": "Document and evaluate efficient delta\u2011update strategies for LightRAG\u2019s graph and vector stores."
+          "description": "Insufficient coverage of COVID\u201119 pandemic response, vaccine misinformation campaigns, and public health policy updates beyond early 2021.",
+          "research_topic": "Updated compilation of national COVID-19 vaccination policies, mandates, and misinformation countermeasures up to 2025"
         },
         {
           "gap_id": "G5",
-          "description": "Limited resources on multi\u2011modal retrieval (image, video) integration beyond text queries.",
-          "research_topic": "Extend the knowledge base with image/video embeddings and provide usage examples."
-        },
-        {
-          "gap_id": "G6",
-          "description": "Missing discussion of privacy, data protection compliance (GDPR, CCPA), and security best practices.",
-          "research_topic": "Create a privacy\u2011impact assessment guide for LightRAG deployments handling personal or sensitive information."
-        },
-        {
-          "gap_id": "G7",
-          "description": "Developer experience is under\u2011documented; tutorials, API examples, and troubleshooting guides are sparse.",
-          "research_topic": "Produce step\u2011by\u2011step developer documentation, sample code snippets, and a FAQ for common integration issues."
+          "description": "Underrepresentation of global economic inequality metrics, especially cross-border income disparities and debt dynamics post-pandemic.",
+          "research_topic": "Analysis of international income distribution data and sovereign debt trends from 2019\u20112024"
         }
       ]
     },
     {
-      "report_id": "ana_20250824_131121",
+      "report_id": "ana_20250825_000329",
       "knowledge_base_summary": {
-        "summary": "The LightRAG knowledge base contains an extensive collection of labels covering U.S. and global politics, economics, social policy, technology, law, health, environment, international relations, and cultural topics. The data set is heavily weighted toward contemporary political events (e.g., 2024 election, Trump administration policies), federal budget discussions, civil rights issues, and the cryptocurrency/crypto\u2011finance domain. It also includes a wide range of historical references, academic sources, and public policy documents.",
-        "themes": [
-          {
-            "theme_id": "T1",
-            "description": "U.S. Political Landscape & Governance"
-          },
-          {
-            "theme_id": "T2",
-            "description": "Economic Policy, Finance & Budgeting"
-          },
-          {
-            "theme_id": "T3",
-            "description": "Social Justice, Civil Rights & Inequality"
-          },
-          {
-            "theme_id": "T4",
-            "description": "Technology & Digital Economy (including Crypto)"
-          },
-          {
-            "theme_id": "T5",
-            "description": "Health Policy & Public Health"
-          },
-          {
-            "theme_id": "T6",
-            "description": "Environment, Climate Change & Energy"
-          },
-          {
-            "theme_id": "T7",
-            "description": "International Relations & Global Affairs"
-          }
-        ]
+        "summary": "The LightRAG knowledge base appears to be focused on political and social topics, particularly those related to conservative movements in the United States. It includes analyses of government efficiency, DEI (Diversity, Equity, and Inclusion) policies, corporate influence, and critiques of current administrative practices under various leadership figures."
       },
-      "identified_gaps": [
+      "themes": [
         {
-          "gap_id": "G1",
-          "description": "Limited coverage of post\u2011COVID\u201119 economic recovery measures and their impact on small businesses.",
-          "research_topic": "Updated analysis of U.S. small business support programs enacted after 2023, including the Paycheck Protection Program extensions and new SBA loan initiatives."
+          "theme_id": "conservative_politics",
+          "description": "Focuses on conservative U.S. political movements including MAGA, Project 2025, DEI policy reversals, and executive orders related to government efficiency."
         },
         {
-          "gap_id": "G2",
-          "description": "Sparse information on emerging AI governance frameworks and regulatory proposals.",
-          "research_topic": "Comprehensive review of U.S. federal AI policy developments from 2024 to present, focusing on the proposed AI Bill of Rights and state\u2011level legislation."
+          "theme_id": "corporate_influence",
+          "description": "Analyzes the relationships between large corporations like Tesla or SpaceX and government policies, particularly in economic sectors."
         },
         {
-          "gap_id": "G3",
-          "description": "Insufficient data on climate change mitigation policies at the subnational level (state and local governments).",
-          "research_topic": "Current status of U.S. state-level net\u2011zero commitments, carbon pricing mechanisms, and renewable energy mandates as of 2025."
-        },
-        {
-          "gap_id": "G4",
-          "description": "Outdated or missing information on global supply chain resilience initiatives post\u2011pandemic.",
-          "research_topic": "Recent U.S. federal and private sector strategies to strengthen critical manufacturing supply chains, including the Supply Chain Act of 2023 and related executive orders."
-        },
-        {
-          "gap_id": "G5",
-          "description": "Limited coverage of mental health policy responses to pandemic\u2011related stressors.",
-          "research_topic": "Updated U.S. federal and state mental health programs launched after 2022, with emphasis on telehealth expansion and funding for community outreach."
-        },
-        {
-          "gap_id": "G6",
-          "description": "Underrepresentation of indigenous peoples\u2019 policy issues and treaty rights discussions.",
-          "research_topic": "Recent U.S. federal actions affecting Native American tribes (e.g., land\u2011use decisions, tribal sovereignty cases) from 2023 to present."
-        },
-        {
-          "gap_id": "G7",
-          "description": "Lack of recent data on cybersecurity threat landscape and national defense cyber policies.",
-          "research_topic": "Current U.S. federal cybersecurity initiatives (e.g., Cybersecurity Act amendments, NIST updates) and major cyber incidents reported in 2024."
+          "theme_id": "government_operations",
+          "description": "Examines U.S. government agencies (e.g., OMB, GAO), budgetary decisions, regulatory frameworks, and civil service management."
         }
-      ]
-    },
-    {
-      "report_id": "ana_20250824_133746",
-      "knowledge_base_summary": {
-        "summary": "The LightRAG knowledge base provides extensive coverage on U.S. federal policy areas including fiscal and budgetary matters, social welfare programs (SNAP, Medicaid), healthcare reform, immigration and border security, electoral processes, digital platforms and cryptocurrency regulation, civil rights and discrimination issues, criminal justice system, and political ideology.",
-        "themes": [
-          {
-            "theme_id": "T1",
-            "description": "Fiscal and Budgetary Policy"
-          },
-          {
-            "theme_id": "T2",
-            "description": "Social Welfare and Public Assistance Programs"
-          },
-          {
-            "theme_id": "T3",
-            "description": "Healthcare System and Reform"
-          },
-          {
-            "theme_id": "T4",
-            "description": "Immigration, Border Security, and Citizenship"
-          },
-          {
-            "theme_id": "T5",
-            "description": "Electoral Processes and Voting Rights"
-          },
-          {
-            "theme_id": "T6",
-            "description": "Digital Platforms, Big Tech, and Crypto Regulation"
-          },
-          {
-            "theme_id": "T7",
-            "description": "Civil Rights, Discrimination, and Hate Crime"
-          },
-          {
-            "theme_id": "T8",
-            "description": "Criminal Justice & Law Enforcement"
-          }
-        ]
-      },
+      ],
       "identified_gaps": [
         {
-          "gap_id": "G1",
-          "description": "The knowledge base lacks detailed coverage of climate change policy and legislation within the U.S., including federal, state, and local initiatives.",
-          "research_topic": "Updated information on U.S. federal and state-level climate change policies and legislative actions after 2025."
+          "gap_id": "outdated_ policies",
+          "description": "Lack of information on how past executive orders or administrative actions from previous administrations have been reversed or superseded.",
+          "research_topic": "Analysis of the reversal and implementation of historical U.S. government executive orders post-2017"
         },
         {
-          "gap_id": "G2",
-          "description": "Absence of comprehensive data on artificial intelligence regulation, governance frameworks, and policy developments in the United States.",
-          "research_topic": "Current status and recent developments (post-2024) of U.S. federal AI regulatory initiatives and proposed legislation."
+          "gap_id": "corporate_lobbying",
+          "description": "Insufficient detail on specific lobbying efforts by corporations within current budgetary frameworks or policy debates.",
+          "research_topic": "Detailed examination of corporate lobbying in relation to DEI and government efficiency initiatives after 2018"
         },
         {
-          "gap_id": "G3",
-          "description": "Limited coverage of mental health services, public health policies related to mental well-being, and funding mechanisms within the U.S.",
-          "research_topic": "Recent updates on U.S. mental health policy reforms, funding allocations, and service delivery models after 2024."
+          "gap_id": "economic_inequality",
+          "description": "Absence of comprehensive data on how the knowledge base accounts for economic inequality between different demographic groups.",
+          "research_topic": "Quantitative analysis of differential asset accumulation across racial and income demographics within U.S. policy contexts after 2018"
         },
         {
-          "gap_id": "G4",
-          "description": "The knowledge base does not include detailed information about international trade agreements involving the United States, such as USMCA or WTO commitments.",
-          "research_topic": "Updated overview of U.S. international trade agreements (e.g., USMCA, CPTPP) and recent negotiations post-2024."
+          "gap_id": "regulatory_changes",
+          "description": "Minimal coverage on incremental regulatory changes that may not be explicitly tied to major shifts like Project 2025.",
+          "research_topic": "Incremental analysis of Title VII regulations and their implications for workplace equity after the January 20, 2025 Executive Order"
+        },
+        {
+          "gap_id": "crypto_regulation",
+          "description": "Limited discussion on cryptocurrency regulation beyond the context of Trump-related initiatives.",
+          "research_topic": "Update on U.S. national crypto policy discussions since March 2025, focusing on expert analyses and proposed frameworks"
         }
       ]
     }

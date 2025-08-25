@@ -1,51 +1,17 @@
 # tools.py
 import re
+import json_repair
 from langchain_core.tools import tool, ToolException
 import json
 import os
 
-@tool
-def _extract_and_clean_json(llm_output: str) -> dict:
-    """
-    Extracts and cleans a JSON object from the Curator LLM's output.
-    """
-    import logging
-    logger = logging.getLogger('KnowledgeAgent')
-
-    status = f"Extracting and cleaning JSON from curator LLM output"
-    print(status)
-    logger.info(status)
-    # Use a regex to find the JSON blob
-    match = re.search(r"\{.*\}", llm_output, re.DOTALL)
-    status = f"Regex match for JSON: {match}"
-    print(status)
-    logger.info(status)
-    if not match:
-        status = f"No JSON object found in the output."
-        print(status)
-        logger.error(status)
-        raise ValueError(status)
-
-    json_string = match.group(0)
-    status = f"Extracted JSON string: {json_string}"
-    print(status)
-    logger.info(status)
-
-    # Try to parse the JSON
-    status = f"Attempting to parse JSON: {json_string}"
-    print(status)
-    logger.info(status)
+def extract_and_clean_json(llm_output: str) -> dict:
+    
+    # Use json_repair.loads() directly as a robust, drop-in replacement for json.loads()
     try:
-        parsed_json = json.loads(json_string)
-        status = f"Successfully parsed JSON: {parsed_json}"
-        print(status)
-        logger.info(status)
-        return parsed_json
-    except json.JSONDecodeError as e:
-        status = f"Failed to parse JSON: {e}"
-        print(status)
-        logger.error(status)
-        raise ValueError(status)
+        return json_repair.loads(llm_output)
+    except Exception as e:
+        raise ValueError(f"Failed to repair or parse JSON: {e}")
 
 @tool
 def load_report(filename: str) -> str:

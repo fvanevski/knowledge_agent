@@ -76,7 +76,7 @@ async def main():
         mcp_tools = await get_mcp_tools()
 
         model = ChatOpenAI(
-            model="openai/gpt-oss-20b",
+            model="chat",
             base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
         )
         

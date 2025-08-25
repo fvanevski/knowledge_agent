@@ -7,49 +7,7 @@ import json
 import os
 import re
 from state import AgentState
-from tools import save_analyst_report
-
-def _extract_and_clean_json_analyst(llm_output: str) -> dict:
-    """
-    Extracts and cleans a JSON object from the Analyst LLM's output.
-    """
-    import logging
-    logger = logging.getLogger('KnowledgeAgent')
-
-    status = f"Extracting and cleaning JSON from analyst LLM output"
-    print(status)
-    logger.info(status)
-    # Use a regex to find the JSON blob
-    match = re.search(r"\{.*\}", llm_output, re.DOTALL)
-    status = f"Regex match for JSON: {match}"
-    print(status)
-    logger.info(status)
-    if not match:
-        status = f"No JSON object found in the output."
-        print(status)
-        logger.error(status)
-        raise ValueError(status)
-
-    json_string = match.group(0)
-    status = f"Extracted JSON string: {json_string}"
-    print(status)
-    logger.info(status)
-
-    # Try to parse the JSON
-    status = f"Attempting to parse JSON: {json_string}"
-    print(status)
-    logger.info(status)
-    try:
-        parsed_json = json.loads(json_string)
-        status = f"Successfully parsed JSON: {parsed_json}"
-        print(status)
-        logger.info(status)
-        return parsed_json
-    except json.JSONDecodeError as e:
-        status = f"Failed to parse JSON: {e}"
-        print(status)
-        logger.error(status)
-        raise ValueError(status)
+from tools import save_analyst_report, extract_and_clean_json
 
 async def analyst_agent_node(state: AgentState):
     """This node encapsulates the entire agent execution loop."""
@@ -111,7 +69,7 @@ def save_analyst_report_node(state: AgentState):
     logger.info(status)
 
     try:
-        report_json = _extract_and_clean_json_analyst(final_message_from_agent.content)
+        report_json = extract_and_clean_json(final_message_from_agent.content)
         if 'report_id' not in report_json:
             report_json['report_id'] = state.get('analyst_report_id', 'unknown_id')
         save_analyst_report.invoke({"analyst_report": json.dumps(report_json)})

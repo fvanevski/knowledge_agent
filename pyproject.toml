@@ -5,6 +5,7 @@ description = "AI agent for intelligently updating and maintaining LightRAG know
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "json-repair",
     "langchain-mcp-adapters",
     "langchain-openai",
     "pydantic",
