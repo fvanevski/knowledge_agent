@@ -49,21 +49,19 @@ def _save_report(table_name: str, report_data: dict):
     report_id = report_data.get("report_id")
     if not report_id:
         raise ValueError("Report data must include a 'report_id'")
+    
+    report_json_string = json.dumps(report_data)
+
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 f"INSERT INTO {table_name} (report_id, report) VALUES (%s, %s);",
-                (report_id, Json(report_data))
+                (report_id, report_json_string)
             )
         conn.commit()
 
 def save_analyst_report(report_data: dict):
-    ordered_report = {
-        "report_id": report_data.get("report_id"),
-        "knowledge_base_summary": report_data.get("knowledge_base_summary"),
-        "identified_gaps": report_data.get("identified_gaps")
-    }
-    _save_report("analyst_reports", ordered_report)
+    _save_report("analyst_reports", report_data)
 
 def save_auditor_report(report_data: dict):
     _save_report("auditor_reports", report_data)
@@ -82,17 +80,18 @@ def initialize_researcher(timestamp: str) -> dict:
     report_id = f"res_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
     
     gaps_to_do = [
-        {"gap_id": gap["gap_id"], "description": gap["description"], "research_topic": gap["research_topic"], "searches": []}
+        {"gap_id": gap["gap_id"], "description": gap["description"], "research_topic": gap["research_topic"], "searches": [" "]}
         for gap in analyst_report.get("identified_gaps", [])
     ]
     
     new_report = {"report_id": report_id, "gaps": gaps_to_do}
+    report_json_string = json.dumps(new_report)
 
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO researcher_reports (report_id, report) VALUES (%s, %s);",
-                (report_id, Json(new_report))
+                (report_id, report_json_string)
             )
         conn.commit()
         
@@ -102,22 +101,33 @@ def update_researcher_report(report_id: str, gap_id: str, searches: list):
     """Updates a researcher report in the database with search results."""
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            sql = """
-            UPDATE researcher_reports
-            SET report = jsonb_set(
-                report,
-                (
-                    SELECT ARRAY['gaps', (elem_index - 1)::text, 'searches']
-                    FROM researcher_reports, jsonb_array_elements(report->'gaps') WITH ORDINALITY arr(elem, elem_index)
-                    WHERE report_id = %s AND elem->>'gap_id' = %s
-                ),
-                %s::jsonb
+            # Read the existing report
+            cur.execute("SELECT report FROM researcher_reports WHERE report_id = %s FOR UPDATE;", (report_id,))
+            result = cur.fetchone()
+            if not result:
+                raise ValueError(f"No researcher report found with id {report_id}")
+            
+            report_data = result[0]
+
+            # Modify the report in Python
+            gaps = report_data.get("gaps", [])
+            gap_found = False
+            for gap in gaps:
+                if gap.get("gap_id") == gap_id:
+                    gap["searches"] = searches
+                    gap_found = True
+                    break
+            
+            if not gap_found:
+                # This case should ideally not be reached if initialization is correct
+                raise ValueError(f"Gap with id {gap_id} not found in report {report_id}")
+
+            # Write the modified report back
+            report_json_string = json.dumps(report_data)
+            cur.execute(
+                "UPDATE researcher_reports SET report = %s WHERE report_id = %s;",
+                (report_json_string, report_id)
             )
-            WHERE report_id = %s AND EXISTS (
-                SELECT 1 FROM jsonb_array_elements(report->'gaps') WHERE value->>'gap_id' = %s
-            );
-            """
-            cur.execute(sql, (report_id, gap_id, Json(searches), report_id, gap_id))
         conn.commit()
 
 def initialize_curator(timestamp: str) -> dict:
@@ -137,12 +147,13 @@ def initialize_curator(timestamp: str) -> dict:
         "urls_for_ingestion": [],
         "url_ingestion_status": []
     }
+    report_json_string = json.dumps(new_report)
 
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO curator_reports (report_id, report) VALUES (%s, %s);",
-                (report_id, Json(new_report))
+                (report_json_string, report_id)
             )
         conn.commit()
         
@@ -152,16 +163,26 @@ def update_curator_report(report_id: str, job: str, results: list):
     """Appends results to a job list in a curator report."""
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            sql = """
-            UPDATE curator_reports
-            SET report = jsonb_set(
-                report,
-                ARRAY[%s],
-                (report->%s) || %s::jsonb
+            # Read the existing report
+            cur.execute("SELECT report FROM curator_reports WHERE report_id = %s FOR UPDATE;", (report_id,))
+            result = cur.fetchone()
+            if not result:
+                raise ValueError(f"No curator report found with id {report_id}")
+            
+            report_data = result[0]
+
+            # Modify the report in Python
+            if job not in report_data:
+                report_data[job] = []
+            
+            report_data[job].extend(results)
+
+            # Write the modified report back
+            report_json_string = json.dumps(report_data)
+            cur.execute(
+                "UPDATE curator_reports SET report = %s WHERE report_id = %s;",
+                (report_json_string, report_id)
             )
-            WHERE report_id = %s;
-            """
-            cur.execute(sql, (job, job, Json(results), report_id))
         conn.commit()
 
 def load_latest_report(report_type: str) -> str:

@@ -7,7 +7,8 @@ import json
 import os
 import re
 from state import AgentState
-from tools import load_report, human_approval, extract_and_clean_json
+from tools import human_approval
+from db_utils import load_latest_report, extract_and_clean_json
 
 
 async def fixer_agent_node(state: AgentState):
@@ -17,7 +18,7 @@ async def fixer_agent_node(state: AgentState):
     logger = state['logger']
     timestamp = state['timestamp']
     
-    fixer_tools = [t for t in all_tools if t.name in ["graph_update_entity", "documents_delete_entity", "graph_update_relation", "documents_delete_relation", "graph_entity_exists"]] + [load_report, human_approval]
+    fixer_tools = [t for t in all_tools if t.name in ["graph_update_entity", "documents_delete_entity", "graph_update_relation", "documents_delete_relation", "graph_entity_exists"]] + [load_latest_report, human_approval]
     fixer_prompt = '''Your goal is to correct data quality issues.
 1.  **Load Auditor's Report**: Load `auditor_report.json`.
 2.  **Create a Plan**: Create a step-by-step plan to correct the issues.

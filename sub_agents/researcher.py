@@ -13,7 +13,7 @@ async def researcher_agent_node(state: AgentState):
 
     if not report_id:
         try:
-            init_result = initialize_researcher_report(state['timestamp'])
+            init_result = initialize_researcher(state['timestamp'])
             report_id = init_result.get("researcher_report_id")
             gaps_todo = init_result.get("researcher_gaps_todo")
             gaps_complete = []
@@ -114,7 +114,7 @@ async def researcher_agent_node(state: AgentState):
         logger.info(final_status)
 
     return {
-        "status": status,
+        "status": final_status,
         "researcher_report_id": report_id,
         "researcher_gaps_todo": gaps_todo,
         "researcher_gaps_complete": gaps_complete

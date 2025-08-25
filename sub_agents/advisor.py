@@ -7,7 +7,7 @@ import json
 import os
 import re
 from state import AgentState
-from tools import load_report, extract_and_clean_json
+from db_utils import load_latest_report, extract_and_clean_json
 
 async def advisor_agent_node(state: AgentState):
     print("--- Running Advisor Agent ---")
@@ -16,7 +16,7 @@ async def advisor_agent_node(state: AgentState):
     logger = state['logger']
     timestamp = state['timestamp']
     
-    advisor_tools = [t for t in all_tools if t.name in ["list_allowed_directories", "list_directory", "search_files", "read_text_file"]] + [load_report]
+    advisor_tools = [t for t in all_tools if t.name in ["list_allowed_directories", "list_directory", "search_files", "read_text_file"]] + [load_latest_report]
     advisor_prompt = '''Your goal is to provide recommendations for systemic improvements.
 1.  **Analyze Reports**: Load and analyze `auditor_report.json` and `fixer_report.json`.
 2.  **Generate Recommendations**: Based on recurring patterns, generate actionable recommendations for ingestion prompts or server configuration.

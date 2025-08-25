@@ -186,7 +186,7 @@ async def curator_agent_node(state: AgentState):
         logger.info(status)
 
     return {
-        "status": status,
+        "status": final_status,
         "curator_report_id": report_id,
         "curator_urls_for_ingestion": curator_urls_for_ingestion,
         "curator_url_ingestion_status": curator_url_ingestion_status
