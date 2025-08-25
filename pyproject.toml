@@ -9,6 +9,7 @@ dependencies = [
     "langchain-mcp-adapters",
     "langchain-openai",
     "pydantic",
+    "psycopg2-binary",
     "python-dotenv",
     "langchain",
     "langgraph",

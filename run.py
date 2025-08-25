@@ -9,6 +9,14 @@ import argparse
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
+from dotenv import load_dotenv
+from db_utils import create_tables
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Create the tables if they don't exist
+create_tables()
 
 # Create a custom JSON formatter
 class JsonFormatter(logging.Formatter):
@@ -76,8 +84,10 @@ async def main():
         mcp_tools = await get_mcp_tools()
 
         model = ChatOpenAI(
-            model="chat",
-            base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8002/v1"),
+            model=os.environ.get("OPENAI_MODEL_NAME", "chat"),
+            base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8001/v1"),
+            temperature=0.5,
+            top_p=0.5,
         )
         
         # 2. Pass tools into the graph creation function
