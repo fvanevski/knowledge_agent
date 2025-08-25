@@ -45,7 +45,7 @@ def save_auditor_report_node(state: AgentState):
         report_json = extract_and_clean_json(final_message_from_agent.content)
         if 'report_id' not in report_json:
             report_json['report_id'] = state.get('auditor_report_id', 'unknown_id')
-        save_auditor_report.invoke({"auditor_report": json.dumps(report_json)})
+        save_auditor_report({"auditor_report": json.dumps(report_json)})
         status = f"Successfully saved auditor report with ID {report_json.get('report_id')}"
         print(f"[INFO] {status}")
         logger.info(status)

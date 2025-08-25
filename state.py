@@ -20,6 +20,8 @@ class AgentState(TypedDict):
 
     # Fields for the analyst agent's stateful workflow
     analyst_report_id: Optional[str]
+    analyst_report: Optional[str]
+
 
     # Fields for the researcher agent's stateful workflow
     researcher_report_id: Optional[str]

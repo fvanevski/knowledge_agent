@@ -1,13 +1,9 @@
 # curator.py
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import tool, ToolException
 from langchain_core.messages import AIMessage
-import json
-import os
-import re
 from state import AgentState
-from tools import initialize_curator, update_curator_report, extract_and_clean_json
+from db_utils import initialize_curator, update_curator_report, extract_and_clean_json
     
 async def curator_agent_node(state: AgentState):
     logger = state['logger']
@@ -31,7 +27,7 @@ async def curator_agent_node(state: AgentState):
             status = f"Failed to initialize curator report: {e}"
             print(f"[ERROR] {status}")
             logger.error(status, exc_info=True)
-            return {"status": status}
+            return {"messages": state['messages'] + [AIMessage(content=status)]}
 
     # Create the specialized agent for search ranking
     search_ranker_prompt = ChatPromptTemplate.from_template(open("prompts/search_ranker_prompt.txt", "r").read())
@@ -46,7 +42,7 @@ async def curator_agent_node(state: AgentState):
         status = f"Failed to create search ranker agent executor: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
-        return {"status": status}
+        return {"messages": state['messages'] + [AIMessage(content=status)]}
 
     # Main control loop for search ranking
     task = "Rank the search results in `{search_results}` based on relevance to the rationale in `{search_rationale}`"
@@ -93,7 +89,7 @@ async def curator_agent_node(state: AgentState):
                         "job": "urls_for_ingestion",
                         "results": ranked_urls
                     }
-                    result = update_curator_report.invoke(tool_input)
+                    update_curator_report(tool_input)
                     status = f"Updated report for search {current_search['search_id']} with {len(ranked_urls)} URLs."
                     print(f"[INFO] {status}")
                     logger.info(status)
@@ -108,7 +104,7 @@ async def curator_agent_node(state: AgentState):
                 logger.info(status)
 
             except Exception as e:
-                status = f"AgentExecutor failed: {e}"
+                status = f"Curater agent search ranking for search {current_search['search_id']} failed: {e}"
                 print(f"[ERROR] {status}")
                 logger.error(status, exc_info=True)
                 continue
@@ -130,7 +126,7 @@ async def curator_agent_node(state: AgentState):
         status = f"Failed to create url ingestion agent executor: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
-        return {"status": status}
+        return {"messages": state['messages'] + [AIMessage(content=status)]}
 
    # Main control for url ingestion
 
@@ -158,7 +154,7 @@ async def curator_agent_node(state: AgentState):
             status = f"Failed to parse URL ingestion status: {e}"
             print(f"[ERROR] {status}")
             logger.error(status, exc_info=True)
-            return {"status": status}
+            return {"messages": state['messages'] + [AIMessage(content=status)]}
 
         status = f"Preparing to update report: {state.get('curator_report_id', 'unknown_id')} with ingestion status for {len(url_ingestion_status)} URLs."
         print(f"[INFO] {status}")
@@ -170,7 +166,7 @@ async def curator_agent_node(state: AgentState):
                 "job": "url_ingestion_status",
                 "results": url_ingestion_status
             }
-            ingestion_result = update_curator_report.invoke(tool_input)
+            ingestion_result = update_curator_report(tool_input)
             status = f"Updated report {state.get('curator_report_id', 'unknown_id')} with ingestions status for {len(url_ingestion_status)} URLs."
             print(f"[INFO] {status}")
             logger.info(status)
@@ -178,20 +174,20 @@ async def curator_agent_node(state: AgentState):
             status = f"Failed to update report {state.get('curator_report_id', 'unknown_id')}: {e}"
             print(f"[ERROR] {status}")
             logger.error(status, exc_info=True)
-            return {"status": status}
+            return {"messages": state['messages'] + [AIMessage(content=status)]}
 
         status = f"Successfully updated report {state.get('curator_report_id', 'unknown_id')} with {len(url_ingestion_status)} URLs."
         print(f"[INFO] {status}")
         logger.info(status)
+
     except Exception as e:
-        status = f"Curator agent failed to run ingestion of ranked URLs: {e}"
+        final_status = f"Curator agent failed to run ingestion of ranked URLs: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
-        return {"status": status}
+    
+    if not final_status:
+        final_status = f"Curator successfully ranked and ingested URLs, generating curator report summary written to file `state/curator_report.json`"
+        print(f"[INFO] {status}")
+        logger.info(status)
 
-    # The node returns a single AIMessage with the final report.
-    # This message is then passed to the next node in the graph.
-    status = f"Curator successfully ranked and ingested URLs, generating curator report summary written to file `state/curator_report.json`"
-    print(f"[INFO] {status}")
-    logger.info(status)
-    return {"messages": state['messages'] + [AIMessage(content=status)]}
+    return {"messages": state['messages'] + [AIMessage(content=final_status)]}
