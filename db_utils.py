@@ -64,9 +64,8 @@ def extract_and_clean_json(llm_output: str) -> dict:
 
 # --- Report Handling Functions ---
 
-def save_analyst_report(report: str):
+def save_analyst_report(report_data: dict):
     """Saves the analyst's report to the database."""
-    report_data = json.loads(report)
     report_id = report_data.get("report_id")
     if not report_id:
         raise ValueError("Report data must include a 'report_id'")

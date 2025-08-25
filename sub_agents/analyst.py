@@ -30,7 +30,7 @@ async def analyst_agent_node(state: AgentState):
         status = f"Failed to create agent executor: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
-        return {"messages": state['messages'] + [AIMessage(content=status)]}
+        return {"status": status}
 
 
     task = state['messages'][0].content
@@ -38,35 +38,35 @@ async def analyst_agent_node(state: AgentState):
     print(f"[INFO] {status}")
     logger.info(status)
     try:
-        # The executor handles the entire loop of tool calls and reasoning.
         analyst_result = await executor.ainvoke({
             "input": task,
             "analyst_report_id": state.get("analyst_report_id", "")
         })
-        state["analyst_report"] = analyst_result.get("output", "")
+        raw_report = analyst_result.get("output", "")
         status = f"Analyst agent completed.\nRaw output: {state['analyst_report']}"
         print(f"[INFO] {status}")
         logger.info(status)
-        final_status = f"Successfully generated analyst report: {state['analyst_report_id']}"
+        state['status'] = f"Successfully generated analyst report: {state['analyst_report_id']}"
 
     except Exception as e:
         status = f"Analyst agent failed: {e}"
         print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
-        final_status = status
+        state['status'] = status
 
-    return {"messages": state['messages'] + [AIMessage(content=final_status)]}
+    return {"analyst_report": raw_report}
 
 def save_analyst_report_node(state: AgentState):
     """Saves the final report from the last AI message."""
     logger = state['logger']
+    raw_report_content = state.get("analyst_report")
 
     status = f"--- Saving Analyst Report ---"
     print(f"[INFO] {status}")
     logger.info(status)
 
     try:
-        report_json = extract_and_clean_json(state['analyst_report'])
+        report_json = extract_and_clean_json(raw_report_content)
         if 'report_id' not in report_json:
             report_json['report_id'] = state.get('analyst_report_id', 'unknown_id')
         save_analyst_report(report_json)
@@ -78,4 +78,4 @@ def save_analyst_report_node(state: AgentState):
         print(f"[ERROR] {status}")
         logger.error(status)
     
-    return {"messages": state['messages'] + [AIMessage(content=status)]}
+    return {"status": status}
