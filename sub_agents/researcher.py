@@ -4,9 +4,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from state import AgentState
 from db_utils import initialize_researcher, update_researcher_report, extract_and_clean_json
 import uuid
+from terminal_utils import print_colorful_break
 
 async def researcher_agent_node(state: AgentState):
     """The main node for the researcher workflow."""
+    print_colorful_break("RESEARCHER")
     logger = state['logger']
     report_id = state.get("researcher_report_id")
     gaps_todo = state.get("researcher_gaps_todo", [])
@@ -20,11 +22,9 @@ async def researcher_agent_node(state: AgentState):
             gaps_todo = init_result.get("researcher_gaps_todo")
             gaps_complete = []
             status = f"--- Initialized researcher state: {init_result} ---"
-            print(f"[INFO] {status}")
             logger.info(status)
         except Exception as e:
             status = f"Failed to initialize researcher state: {e}"
-            print(f"[ERROR] {status}")
             logger.error(status)
             return {"status": status}
 
@@ -37,7 +37,6 @@ async def researcher_agent_node(state: AgentState):
         planner_executor = AgentExecutor(agent=planner_agent_runnable, tools=[], verbose=True)
     except Exception as e:
         status = f"Failed to create planner agent executor: {e}"
-        print(f"[ERROR] {status}")
         logger.error(status)
         return {"status": status}
 
@@ -50,7 +49,6 @@ async def researcher_agent_node(state: AgentState):
         refiner_executor = AgentExecutor(agent=refiner_agent_runnable, tools=[], verbose=True)
     except Exception as e:
         status = f"Failed to create refiner agent executor: {e}"
-        print(f"[ERROR] {status}")
         logger.error(status)
         return {"status": status}
 
@@ -58,7 +56,6 @@ async def researcher_agent_node(state: AgentState):
     google_search_tool = next((tool for tool in state['mcp_tools'] if tool.name == 'google_search'), None)
     if not google_search_tool:
         status = "google_search tool not found."
-        print(f"[ERROR] {status}")
         logger.error(status)
         return {"status": status}
 
@@ -70,20 +67,18 @@ async def researcher_agent_node(state: AgentState):
                 research_topic = current_gap['research_topic']
                 all_searches_for_gap = []
 
-                status = f"Starting research for gap: {gap_id}, research topic: {research_topic}"
-                print(f"[INFO] {status}")
+                research_topic_title = research_topic.get('title', 'No Title')
+                status = f"Starting research for gap: {gap_id}, research topic: {research_topic_title}"
                 logger.info(status)
 
                 try:
                     # 1. Planning Step
                     status = f"Invoking planner for gap {gap_id}."
-                    print(f"[INFO] {status}")
                     logger.info(status)
                     planner_result = await planner_executor.ainvoke({"input": research_topic})
                     planner_output = extract_and_clean_json(planner_result.get("output", ""))
                     planned_searches = planner_output.get("searches", [])
                     status = f"Planner for gap {gap_id} returned {len(planned_searches)} searches."
-                    print(f"[INFO] {status}")
                     logger.info(status)
 
                     # 2. Initial Execution Step
@@ -100,7 +95,6 @@ async def researcher_agent_node(state: AgentState):
 
                         try:
                             status = f"Executing search for gap {gap_id}, with parameters: {parameters}"
-                            print(f"[INFO] {status}")
                             logger.info(status)
                             
                             search_results = await google_search_tool.arun(parameters)
@@ -114,17 +108,14 @@ async def researcher_agent_node(state: AgentState):
                             all_searches_for_gap.append(search_object)
                             
                             status = f"Search for gap {gap_id} finished for query: '{query}'"
-                            print(f"[INFO] {status}")
                             logger.info(status)
                         except Exception as e:
                             status = f"Search for gap {gap_id}, query '{query}' failed: {e}"
-                            print(f"[ERROR] {status}")
                             logger.error(status)
                             continue
 
                     # 3. Refinement Step
                     status = f"Invoking refiner for gap {gap_id}."
-                    print(f"[INFO] {status}")
                     logger.info(status)
                     refiner_input = {"research_topic": research_topic, "search_results": all_searches_for_gap}
                     refiner_result = await refiner_executor.ainvoke({"input": refiner_input})
@@ -133,7 +124,6 @@ async def researcher_agent_node(state: AgentState):
                     if refiner_output.get("status") == "insufficient":
                         refined_searches = refiner_output.get("searches", [])
                         status = f"Refiner for gap {gap_id} returned {len(refined_searches)} new searches."
-                        print(f"[INFO] {status}")
                         logger.info(status)
 
                         # 4. Refined Execution Step
@@ -150,7 +140,6 @@ async def researcher_agent_node(state: AgentState):
                             
                             try:
                                 status = f"Executing refined search for gap {gap_id}, with parameters: {parameters}"
-                                print(f"[INFO] {status}")
                                 logger.info(status)
 
                                 search_results = await google_search_tool.arun(parameters)
@@ -164,53 +153,43 @@ async def researcher_agent_node(state: AgentState):
                                 all_searches_for_gap.append(search_object)
 
                                 status = f"Refined search for gap {gap_id} finished for query: '{query}'"
-                                print(f"[INFO] {status}")
                                 logger.info(status)
                             except Exception as e:
                                 status = f"Refined search for gap {gap_id}, query '{query}' failed: {e}"
-                                print(f"[ERROR] {status}")
                                 logger.error(status)
                                 continue
                     else:
                         status = f"Refiner for gap {gap_id} deemed results sufficient."
-                        print(f"[INFO] {status}")
                         logger.info(status)
 
                     # 5. Update Step
                     status = f"Preparing to update report for gap {gap_id} with {len(all_searches_for_gap)} searches."
-                    print(f"[INFO] {status}")
                     logger.info(status)
                     try:
                         update_researcher_report(report_id, gap_id, all_searches_for_gap)
                         gaps_complete.append(gap_id)
                         gaps_todo = [g for g in gaps_todo if g.get("gap_id") != gap_id]
                         status = f"Updated researcher report for gap: {gap_id}"
-                        print(f"[INFO] {status}")
                         logger.info(status)
                     except Exception as e:
                         status = f"Error updating report for gap {gap_id}: {e}"
-                        print(f"[ERROR] {status}")
                         logger.error(status, exc_info=True)
                         continue
 
                     status = f"--- Successfully completed research and report writing for gap: {gap_id} ---"
-                    print(f"[INFO] {status}")
                     logger.info(status)
 
                 except Exception as e:
                     status = f"An unexpected error occurred while processing gap {gap_id}: {e}"
-                    print(f"[ERROR] {status}")
                     logger.error(status, exc_info=True)
                     continue
     
     except Exception as e:
         final_status = f"Main loop failed: {e}"
-        print(f"[ERROR] {final_status}")
         logger.error(final_status, exc_info=True)
 
     if not final_status:
         final_status = f"Successfully and incrementally completed researcher report with ID {report_id} and wrote report to DB."
-        print(f"[INFO] {final_status}")
         logger.info(final_status)
 
     return {

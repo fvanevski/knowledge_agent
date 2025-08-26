@@ -11,6 +11,7 @@ from langchain_core.messages import HumanMessage
 from knowledge_agent import get_mcp_tools, create_knowledge_agent_graph
 from dotenv import load_dotenv
 from db_utils import create_tables
+from terminal_utils import print_colorful_break
 
 # Load environment variables from .env file
 load_dotenv()
@@ -52,6 +53,7 @@ logger = logging.getLogger('KnowledgeAgent')
 
 
 async def main():
+    print_colorful_break("KNOWLEDGE AGENT INITIALIZING")
     parser = argparse.ArgumentParser(description="Run the Knowledge Agent with a specific workflow.")
     parser.add_argument("--maintenance", action="store_true", help="Run the full maintenance workflow.")
     parser.add_argument("--analyze", action="store_true", help="Run the analysis workflow.")
@@ -110,9 +112,9 @@ async def main():
         
         final_state = await app.ainvoke(initial_state)
 
-        print("--- Workflow Complete ---")
-        print(f"Final Status: {final_state['status']}")
-        logger.info(f"--- Workflow finished with final status: {final_state['status']} ---")
+        logger.info("--- Workflow Complete ---")
+        logger.info(f"Final Status: {final_state['status']}")
+        print_colorful_break("KNOWLEDGE AGENT RUN COMPLETE")
 
     finally:
         logging.shutdown()

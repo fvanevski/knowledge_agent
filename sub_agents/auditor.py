@@ -8,12 +8,14 @@ import os
 import re
 from state import AgentState
 from db_utils import extract_and_clean_json
+from terminal_utils import print_colorful_break
 
 async def auditor_agent_node(state: AgentState):
-    print("--- Running Auditor Agent ---")
+    print_colorful_break("AUDITOR")
+    logger = state['logger']
+    logger.info("--- Running Auditor Agent ---")
     all_tools = state['mcp_tools']
     model = state['model']
-    logger = state['logger']
     timestamp = state['timestamp']
     
     auditor_tools = [t for t in all_tools if t.name in ["graphs_get", "query"]]
@@ -38,7 +40,6 @@ def save_auditor_report_node(state: AgentState):
     final_message_from_agent = state['messages'][-1]
 
     status = f"--- Saving Auditor Report ---\n{final_message_from_agent.content}"
-    print(f"[INFO] {status}")
     logger.info(status)
 
     try:
@@ -47,11 +48,9 @@ def save_auditor_report_node(state: AgentState):
             report_json['report_id'] = state.get('auditor_report_id', 'unknown_id')
         save_auditor_report({"auditor_report": json.dumps(report_json)})
         status = f"Successfully saved auditor report with ID {report_json.get('report_id')}"
-        print(f"[INFO] {status}")
         logger.info(status)
     except (ValueError, KeyError) as e:
         status = f"Error processing or saving auditor report: {e}"
-        print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
 
     return {"messages": state['messages'] + [AIMessage(content=status)]}

@@ -8,12 +8,14 @@ import os
 import re
 from state import AgentState
 from db_utils import load_latest_report, extract_and_clean_json
+from terminal_utils import print_colorful_break
 
 async def advisor_agent_node(state: AgentState):
-    print("--- Running Advisor Agent ---")
+    print_colorful_break("ADVISOR")
+    logger = state['logger']
+    logger.info("--- Running Advisor Agent ---")
     all_tools = state['mcp_tools']
     model = state['model']
-    logger = state['logger']
     timestamp = state['timestamp']
     
     advisor_tools = [t for t in all_tools if t.name in ["list_allowed_directories", "list_directory", "search_files", "read_text_file"]] + [load_latest_report]
@@ -38,7 +40,6 @@ def save_advisor_report_node(state: AgentState):
     final_message_from_agent = state['messages'][-1]
 
     status = f"--- Saving Advisor Report ---\n{final_message_from_agent.content}"
-    print(f"[INFO] {status}")
     logger.info(status)
 
     try:
@@ -47,11 +48,9 @@ def save_advisor_report_node(state: AgentState):
             report_json['report_id'] = state.get('advisor_report_id', 'unknown_id')
         save_advisor_report({"advisor_report": json.dumps(report_json)})
         status = f"Successfully saved advisor report with ID {report_json.get('report_id')}"
-        print(f"[INFO] {status}")
         logger.info(status)
     except (ValueError, KeyError) as e:
         status = f"Error processing or saving advisor report: {e}"
-        print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
 
     return {"messages": state['messages'] + [AIMessage(content=status)]}

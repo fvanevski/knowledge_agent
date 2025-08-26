@@ -9,13 +9,15 @@ import re
 from state import AgentState
 from tools import human_approval
 from db_utils import load_latest_report, extract_and_clean_json
+from terminal_utils import print_colorful_break
 
 
 async def fixer_agent_node(state: AgentState):
-    print("--- Running Fixer Agent ---")
+    print_colorful_break("FIXER")
+    logger = state['logger']
+    logger.info("--- Running Fixer Agent ---")
     all_tools = state['mcp_tools']
     model = state['model']
-    logger = state['logger']
     timestamp = state['timestamp']
     
     fixer_tools = [t for t in all_tools if t.name in ["graph_update_entity", "documents_delete_entity", "graph_update_relation", "documents_delete_relation", "graph_entity_exists"]] + [load_latest_report, human_approval]
@@ -42,7 +44,6 @@ def save_fixer_report_node(state: AgentState):
     final_message_from_agent = state['messages'][-1]
 
     status = f"--- Saving Fixer Report ---\n{final_message_from_agent.content}"
-    print(f"[INFO] {status}")
     logger.info(status)
 
     try:
@@ -51,11 +52,9 @@ def save_fixer_report_node(state: AgentState):
             report_json['report_id'] = state.get('fixer_report_id', 'unknown_id')
         save_fixer_report({"fixer_report": json.dumps(report_json)})
         status = f"Successfully saved fixer report with ID {report_json.get('report_id')}"
-        print(f"[INFO] {status}")
         logger.info(status)
     except (ValueError, KeyError) as e:
         status = f"Error processing or saving fixer report: {e}"
-        print(f"[ERROR] {status}")
         logger.error(status, exc_info=True)
 
     return {"messages": state['messages'] + [AIMessage(content=status)]}
