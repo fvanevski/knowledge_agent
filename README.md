@@ -39,6 +39,8 @@ The Knowledge Agent uses a multi-agent architecture, where a primary **Orchestra
 
 - **[LangChain](https://www.langchain.com/)**: Used for building the core agent logic and integrating with language models.
 - **[LangGraph](https://langchain-ai.github.io/langgraph/)**: Used to create the stateful, multi-agent graph that orchestrates the sub-agents.
+- **[langchain-mcp-adapters](https://pypi.org/project/langchain-mcp-adapters/)**: Used for connecting to and using tools from MCP servers.
+- **[ChatOpenAI](https://python.langchain.com/docs/integrations/chat/openai)**: Used as the language model for the agents.
 - **[pydantic](https://pydantic-docs.helpmanual.io/)**: Used for data validation and settings management.
 - **[psycopg2-binary](https://pypi.org/project/psycopg2-binary/)**: Used for connecting to the PostgreSQL database.
 - **[python-dotenv](https://pypi.org/project/python-dotenv/)**: Used for managing environment variables.
@@ -138,18 +140,32 @@ The Knowledge Agent requires a `mcp.json` file in the root directory to configur
 
 ```json
 {
-  "servers": [
-    {
-      "name": "lightrag_mcp",
-      "url": "http://localhost:8001",
-      "enabled": true
+    "google_search": {
+        "command": "uv",
+        "args": ["run", "python", "google_search_mcp.py"],
+        "cwd": "/workspace/mcp_servers/google_search_mcp",
+        "transport": "stdio"
     },
-    {
-      "name": "google_search_mcp",
-      "url": "http://localhost:8003",
-      "enabled": true
+    "lightrag": {
+        "command": "uv",
+        "args": ["run", "python", "lightrag_mcp.py"],
+        "cwd": "/workspace/mcp_servers/lightrag_mcp",
+        "transport": "stdio"
+    },
+    "fetch": {
+        "command": "uvx",
+        "args": ["mcp-server-fetch"],
+        "transport": "stdio"
+    },
+    "file_tools": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace/knowledge_agent", "/workspace/LightRAG"],
+        "transport": "stdio"
+    },
+    "deepwiki": {
+        "url": "https://mcp.deepwiki.com/sse",
+        "transport": "sse"
     }
-  ]
 }
 ```
 
@@ -174,5 +190,5 @@ Each table has the following columns:
 
 - `id`: Primary key
 - `report_id`: A unique identifier for the report
-- `data`: A JSONB column containing the report data
+- `report`: A JSONB column containing the report data
 - `created_at`: Timestamp of when the report was created
