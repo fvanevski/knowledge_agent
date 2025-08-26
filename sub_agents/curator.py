@@ -12,6 +12,8 @@ async def curator_agent_node(state: AgentState):
     searches_todo = []
     curator_urls_for_ingestion = []
     curator_url_ingestion_status = []
+    final_status = None
+
     # One-time initialization of the curator state
     if not report_id:
         try:
