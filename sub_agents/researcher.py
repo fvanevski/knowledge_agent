@@ -41,6 +41,19 @@ async def researcher_agent_node(state: AgentState):
         logger.error(status)
         return {"status": status}
 
+    # Define Refiner Agent
+    with open("prompts/refiner_prompt.txt", "r") as f:
+        refiner_prompt_template = f.read()
+    refiner_prompt = ChatPromptTemplate.from_template(refiner_prompt_template)
+    try:
+        refiner_agent_runnable = create_openai_tools_agent(state['model'], [], refiner_prompt)
+        refiner_executor = AgentExecutor(agent=refiner_agent_runnable, tools=[], verbose=True)
+    except Exception as e:
+        status = f"Failed to create refiner agent executor: {e}"
+        print(f"[ERROR] {status}")
+        logger.error(status)
+        return {"status": status}
+
     # Get the google_search tool
     google_search_tool = next((tool for tool in state['mcp_tools'] if tool.name == 'google_search'), None)
     if not google_search_tool:
@@ -73,15 +86,15 @@ async def researcher_agent_node(state: AgentState):
                     print(f"[INFO] {status}")
                     logger.info(status)
 
-                    # 2. Execution Step (Sub-loop)
-                    for i, planned_search in enumerate(planned_searches):
+                    # 2. Initial Execution Step
+                    for planned_search in planned_searches:
                         query = planned_search.get("query")
                         rationale = planned_search.get("rationale")
                         parameters = planned_search.get("parameters", {})
+                        search_id = planned_search.get("search_id")
                         if not query:
                             continue
                         
-                        # Add the query to the parameters if it's not already there
                         if 'query' not in parameters:
                             parameters['query'] = query
 
@@ -90,11 +103,8 @@ async def researcher_agent_node(state: AgentState):
                             print(f"[INFO] {status}")
                             logger.info(status)
                             
-                            # Directly call the google_search tool
                             search_results = await google_search_tool.arun(parameters)
 
-                            search_id = f"search_{gap_id}_{i+1}"
-                            
                             search_object = {
                                 "search_id": search_id,
                                 "rationale": rationale,
@@ -110,9 +120,63 @@ async def researcher_agent_node(state: AgentState):
                             status = f"Search for gap {gap_id}, query '{query}' failed: {e}"
                             print(f"[ERROR] {status}")
                             logger.error(status)
-                            continue # Continue to the next query
+                            continue
 
-                    # 3. Update Step
+                    # 3. Refinement Step
+                    status = f"Invoking refiner for gap {gap_id}."
+                    print(f"[INFO] {status}")
+                    logger.info(status)
+                    refiner_input = {"research_topic": research_topic, "search_results": all_searches_for_gap}
+                    refiner_result = await refiner_executor.ainvoke({"input": refiner_input})
+                    refiner_output = extract_and_clean_json(refiner_result.get("output", ""))
+                    
+                    if refiner_output.get("status") == "insufficient":
+                        refined_searches = refiner_output.get("searches", [])
+                        status = f"Refiner for gap {gap_id} returned {len(refined_searches)} new searches."
+                        print(f"[INFO] {status}")
+                        logger.info(status)
+
+                        # 4. Refined Execution Step
+                        for refined_search in refined_searches:
+                            query = refined_search.get("query")
+                            rationale = refined_search.get("rationale")
+                            parameters = refined_search.get("parameters", {})
+                            search_id = refined_search.get("search_id")
+                            if not query:
+                                continue
+
+                            if 'query' not in parameters:
+                                parameters['query'] = query
+                            
+                            try:
+                                status = f"Executing refined search for gap {gap_id}, with parameters: {parameters}"
+                                print(f"[INFO] {status}")
+                                logger.info(status)
+
+                                search_results = await google_search_tool.arun(parameters)
+
+                                search_object = {
+                                    "search_id": search_id,
+                                    "rationale": rationale,
+                                    "parameters": parameters,
+                                    "results": search_results
+                                }
+                                all_searches_for_gap.append(search_object)
+
+                                status = f"Refined search for gap {gap_id} finished for query: '{query}'"
+                                print(f"[INFO] {status}")
+                                logger.info(status)
+                            except Exception as e:
+                                status = f"Refined search for gap {gap_id}, query '{query}' failed: {e}"
+                                print(f"[ERROR] {status}")
+                                logger.error(status)
+                                continue
+                    else:
+                        status = f"Refiner for gap {gap_id} deemed results sufficient."
+                        print(f"[INFO] {status}")
+                        logger.info(status)
+
+                    # 5. Update Step
                     status = f"Preparing to update report for gap {gap_id} with {len(all_searches_for_gap)} searches."
                     print(f"[INFO] {status}")
                     logger.info(status)
@@ -127,7 +191,7 @@ async def researcher_agent_node(state: AgentState):
                         status = f"Error updating report for gap {gap_id}: {e}"
                         print(f"[ERROR] {status}")
                         logger.error(status, exc_info=True)
-                        continue # Continue to the next gap
+                        continue
 
                     status = f"--- Successfully completed research and report writing for gap: {gap_id} ---"
                     print(f"[INFO] {status}")
@@ -137,7 +201,7 @@ async def researcher_agent_node(state: AgentState):
                     status = f"An unexpected error occurred while processing gap {gap_id}: {e}"
                     print(f"[ERROR] {status}")
                     logger.error(status, exc_info=True)
-                    continue # Continue to the next gap
+                    continue
     
     except Exception as e:
         final_status = f"Main loop failed: {e}"

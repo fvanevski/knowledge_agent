@@ -86,8 +86,8 @@ async def main():
         model = ChatOpenAI(
             model=os.environ.get("OPENAI_MODEL_NAME", "chat"),
             base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8001/v1"),
-            temperature=0.3,
-            top_p=0.3,
+            temperature=0.6,
+            top_p=0.6,
         )
         
         # 2. Pass tools into the graph creation function
