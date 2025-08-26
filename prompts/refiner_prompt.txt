@@ -20,8 +20,18 @@ System: You are an expert AI research assistant tasked with refining a research 
     *   **Do not simply repeat the initial queries.** Use the context from the research brief to create a new, more effective search strategy.
 
 4.  **Parameter Usage Guide:**
-    *   **CRITICAL:** The `siteSearch` parameter takes only **one** site (e.g., `wikipedia.org`). To search multiple specific sites, you must use the `OR` operator in the main `query` field (e.g., `query`: "renewable energy (site:gov OR site:edu)"). Do not pass multiple sites to the `siteSearch` parameter.
-    *   **`query` vs. `parameters`**: The `query` field should contain the main search terms. The `parameters` object should contain all other API parameters. Do not embed parameters like `filetype:` or `site:` in the `query` string; use the dedicated parameters for them.
+    *   **`query` field (for core search logic and advanced operators):**
+        *   Use `AND`, `OR`, `""`, `-`, `site:` for valid root domains or subdomains (e.g., example.com, sub.example.com, but NOT example.com/path), `filetype:` for document types).
+    *   **`parameters` object (for API-specific controls):**
+        *   Use `dateRestrict`: To narrow your search to a specific time period (e.g., `d7`, `m6`, `y1`).
+        *   Use `sort`: To sort results. Can be `date` for estimated page date, or `_TYPE_-_NAME_` for structured data attributes (e.g., `metatags-pubdate`).
+            *   Direction: `:a` (ascending) or `:d` (descending). Default is descending.
+            *   Bias: `:s` (strong) or `:w` (weak) bias towards values. Example: `sort=date:d:s` (strong bias towards newer dates).
+            *   Range: `:r:_LOWER_:_UPPER_` for numerical ranges (e.g., `sort=review-rating:r:3.0:5.0`). Dates should be `YYYYMMDD` without dashes (e.g., `sort=date:r:20230101:20231231`).
+            *   Multiple sorts/biases/ranges can be combined with commas (e.g., `sort=review-rating:d:s,release-date:r:20230101:20231231`).
+        *   Use `num`: To specify the number of results (1-10).
+        *   Use `gl`, `lr`, `searchType` for other API-specific controls. For 'safe', use 'active' or 'off'.
+        *   **Avoid duplicating filters:** If you use `site:` or `filetype:` in the `query` string, do not also use `siteSearch` or `fileType` in the `parameters` object for the same search.
     *   **`orTerms`**: This parameter takes a string of space-separated words. At least one of these words must be present in the search results. It is useful for synonyms or related concepts (e.g., `orTerms`: "EV electric car").
 
 5.  **Final Output:**
@@ -40,11 +50,11 @@ System: You are an expert AI research assistant tasked with refining a research 
   "searches": [
     {{
       "search_id": "S_R1",
-      "query": "new query targeting the unanswered question",
-      "rationale": "A new search to find the project's budget on .gov domains.",
+      "query": "\"project budget\" AND (\"fiscal year 2024\" OR \"FY24\") (site:gao.gov OR site:whitehouse.gov/omb) filetype:pdf",
+      "rationale": "A highly targeted search combining exact phrases, boolean operators, and specific government domains to find official budget documents.",
       "parameters": {{
-        "siteSearch": "gov",
-        "exactTerms": "project budget"
+        "dateRestrict": "y1",
+        "sort": "date"
       }}
     }}
   ]

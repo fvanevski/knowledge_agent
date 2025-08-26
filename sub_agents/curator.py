@@ -43,56 +43,62 @@ async def curator_agent_node(state: AgentState):
         return {"status": status}
 
     # Main control loop for search ranking
-    task = "Rank the search results in `{search_results}` based on relevance to the rationale in `{search_rationale}`"
     if isinstance(searches_todo, list) and searches_todo:
-        for current_search in searches_todo:
-            search_rationale = current_search['rationale']
-            search_results = current_search['results']
+        for item in searches_todo:
+            current_search = item.get("search", {})
+            research_topic = item.get("research_topic", {})
+            
+            search_id = current_search.get("search_id", "unknown_search")
+            search_rationale = current_search.get('rationale', '')
+            search_results = current_search.get('results', [])
 
-            status = f"Processing search: {current_search['search_id']}"
+            status = f"Processing search: {search_id}"
             logger.info(status)
             try:
                 search_ranker_result = await executor.ainvoke({
-                    "input": task,
-                    "search_rationale": search_rationale,
-                    "search_results": search_results
+                    "input": {
+                        "research_topic": research_topic,
+                        "search_results": search_results,
+                        "search_rationale": search_rationale
+                    }
                 })
                 raw_search_ranker_result = search_ranker_result.get('output', '')
-                status = f"Curator agent for search {current_search['search_id']} completed. Raw output: {raw_search_ranker_result}"
+                status = f"Curator agent for search {search_id} completed. Raw output: {raw_search_ranker_result}"
                 logger.info(status)
                 
                 try:
                     json_output = extract_and_clean_json(raw_search_ranker_result)
-                    ranked_urls = json_output.get("urls_for_ingestion", [])
-                    curator_urls_for_ingestion.extend(ranked_urls)
-                    status = f"Successfully parsed ranked URLs for search {current_search['search_id']}: {ranked_urls}."
+                    ranked_urls = json_output.get("ranked_urls", [])
+                    approved_urls = [url['url'] for url in ranked_urls if url.get('status') == 'approved']
+                    curator_urls_for_ingestion.extend(approved_urls)
+                    status = f"Successfully parsed ranked URLs for search {search_id}: {len(approved_urls)} approved."
                     logger.info(status)
                 except Exception as e:
-                    status = f"Failed to parse ranked URLs for search {current_search['search_id']}: {e}"
+                    status = f"Failed to parse ranked URLs for search {search_id}: {e}"
                     logger.error(status, exc_info=True)
                     continue
 
-                status = f"Preparing to update report for search {current_search['search_id']} with {len(ranked_urls)} URLs."
+                status = f"Preparing to update report for search {search_id} with {len(approved_urls)} URLs."
                 logger.info(status)
                 try:
                     tool_input = {
                         "curator_report_id": report_id,
                         "job": "urls_for_ingestion",
-                        "results": ranked_urls
+                        "results": approved_urls
                     }
                     update_curator_report(tool_input)
-                    status = f"Updated report for search {current_search['search_id']} with {len(ranked_urls)} URLs."
+                    status = f"Updated report for search {search_id} with {len(approved_urls)} URLs."
                     logger.info(status)
                 except Exception as e:
-                    status = f"Failed to update report for search {current_search['search_id']}: {e}"
+                    status = f"Failed to update report for search {search_id}: {e}"
                     logger.error(status, exc_info=True)
                     continue
 
-                status = f"Successfully updated report for search {current_search['search_id']} with {len(ranked_urls)} URLs."
+                status = f"Successfully updated report for search {search_id} with {len(approved_urls)} URLs."
                 logger.info(status)
 
             except Exception as e:
-                status = f"Curater agent search ranking for search {current_search['search_id']} failed: {e}"
+                status = f"Curator agent search ranking for search {search_id} failed: {e}"
                 logger.error(status, exc_info=True)
                 continue
 

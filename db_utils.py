@@ -137,11 +137,15 @@ def initialize_curator(timestamp: str) -> dict:
     
     report_id = f"cur_{timestamp.replace('-', '').replace(':', '').replace('T', '_').split('.')[0]}"
     
-    searches_todo = [
-        search for gap in researcher_report.get("gaps", [])
-        for search in gap.get("searches", [])
-    ]
-    
+    searches_todo = []
+    for gap in researcher_report.get("gaps", []):
+        research_topic = gap.get("research_topic", {})
+        for search in gap.get("searches", []):
+            searches_todo.append({
+                "search": search,
+                "research_topic": research_topic
+            })
+
     new_report = {
         "report_id": report_id,
         "urls_for_ingestion": [],

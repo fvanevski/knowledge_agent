@@ -97,7 +97,9 @@ async def researcher_agent_node(state: AgentState):
                             status = f"Executing search for gap {gap_id}, with parameters: {parameters}"
                             logger.info(status)
                             
-                            search_results = await google_search_tool.arun(parameters)
+                            raw_search_results = await google_search_tool.arun(parameters)
+                            search_results = extract_and_clean_json(raw_search_results)
+
 
                             search_object = {
                                 "search_id": search_id,
@@ -142,7 +144,9 @@ async def researcher_agent_node(state: AgentState):
                                 status = f"Executing refined search for gap {gap_id}, with parameters: {parameters}"
                                 logger.info(status)
 
-                                search_results = await google_search_tool.arun(parameters)
+                                raw_search_results = await google_search_tool.arun(parameters)
+                                search_results = extract_and_clean_json(raw_search_results)
+
 
                                 search_object = {
                                     "search_id": search_id,

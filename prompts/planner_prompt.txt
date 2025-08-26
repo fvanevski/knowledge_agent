@@ -11,13 +11,23 @@ System: You are an expert AI research assistant tasked with planning a research 
     *   Your search plan should be designed to answer the `key_questions` and cover the `keywords`.
     *   Prioritize the `sources_to_consult` and actively avoid the `sources_to_avoid`.
     *   For each search, provide a unique `search_id` (using the format `S_P1`, `S_P2`, etc.), a `query`, a `rationale`, and a `parameters` object.
-    *   **Use advanced search parameters to your advantage.** Don't just create simple queries. Think strategically about how to get the most relevant results.
+    *   **Leverage Google's advanced search operators directly within the `query` string** (e.g., `AND`, `OR`, `""` for exact phrases, `-` for exclusion, `site:` for valid root domains or subdomains (e.g., example.com, sub.example.com, but NOT example.com/path), `filetype:` for document types). This allows for powerful and flexible combinations.
 
 3.  **Parameter Usage Guide:**
-    *   **`query` vs. `parameters`**: The `query` field should contain the main search terms. The `parameters` object should contain all other API parameters. Do not embed parameters like `filetype:` or `site:` in the `query` string; use the dedicated parameters for them.
-    *   **`siteSearch`**: This parameter takes only **one** site (e.g., `wikipedia.org`). To search across multiple sites, you can use the `OR` operator within the `query` field itself (e.g., `query`: "renewable energy (site:gov OR site:edu)").
+    *   **`query` field (for core search logic and advanced operators):**
+        *   Use `AND`, `OR`, `""`, `-`, `site:`, `filetype:` directly in the `query` string for complex logical combinations.
+        *   Example: "renewable energy" AND (site:gov OR site:edu) filetype:pdf
+    *   **`parameters` object (for API-specific controls):**
+        *   Use `dateRestrict`: To narrow your search to a specific time period (e.g., `d7`, `m6`, `y1`).
+        *   Use `sort`: To sort results. Can be `date` for estimated page date, or `_TYPE_-_NAME_` for structured data attributes (e.g., `metatags-pubdate`).
+            *   Direction: `:a` (ascending) or `:d` (descending). Default is descending.
+            *   Bias: `:s` (strong) or `:w` (weak) bias towards values. Example: `sort=date:d:s` (strong bias towards newer dates).
+            *   Range: `:r:_LOWER_:_UPPER_` for numerical ranges (e.g., `sort=review-rating:r:3.0:5.0`). Dates should be `YYYYMMDD` without dashes (e.g., `sort=date:r:20230101:20231231`).
+            *   Multiple sorts/biases/ranges can be combined with commas (e.g., `sort=review-rating:d:s,release-date:r:20230101:20231231`).
+        *   Use `num`: To specify the number of results (1-10).
+        *   Use `gl`, `lr`, `searchType` for other API-specific controls. For 'safe', use 'active' or 'off'.
+        *   **Avoid duplicating filters:** If you use `site:` or `filetype:` in the `query` string, do not also use `siteSearch` or `fileType` in the `parameters` object for the same search.
     *   **`orTerms`**: This parameter takes a string of space-separated words. At least one of these words must be present in the search results. It is useful for synonyms or related concepts (e.g., `orTerms`: "EV electric car").
-    *   **Combining Parameters**: You can and should combine multiple parameters to create highly specific and effective queries.
 
 4.  **Final Output:**
     *   Your final and ONLY output must be a single, valid JSON object with a single key "searches" that contains a list of 5 search objects.
@@ -35,35 +45,36 @@ System: You are an expert AI research assistant tasked with planning a research 
     }},
     {{
       "search_id": "S_P2",
-      "query": "query based on key questions",
-      "rationale": "A targeted search designed to answer one of the key questions from the research brief.",
+      "query": "\"cryptocurrency regulation\" AND (\"SEC enforcement\" OR \"CFTC guidance\") (site:sec.gov OR site:cftc.gov) filetype:pdf -blog -news",
+      "rationale": "A highly targeted search combining exact phrases, boolean operators, exclusion terms, and direct site/filetype filters within the query string to find official regulatory documents.",
       "parameters": {{
-        "exactTerms": "a specific phrase from a key question"
+        "dateRestrict": "y1",
+        "sort": "date"
       }}
     }},
     {{
       "search_id": "S_P3",
-      "query": "query using keywords and suggested sources",
-      "rationale": "A search using the keywords from the brief, targeting a suggested source.",
+      "query": "(\"policy initiative\" OR \"regulatory framework\") AND \"impact assessment\" (site:epa.gov OR site:energy.gov)",
+      "rationale": "A complex query using boolean OR for concepts and targeting multiple authoritative government domains directly within the query string.",
       "parameters": {{
-        "query": "keyword1 keyword2",
-        "siteSearch": "suggested-source.com"
+        "sort": "date"
       }}
     }},
     {{
       "search_id": "S_P4",
-      "query": "query avoiding certain sources",
-      "rationale": "A search designed to find information while excluding irrelevant sources.",
+      "query": "latest news \"research topic title\" -blog -opinion",
+      "rationale": "A search for recent news, excluding common low-quality sources, to capture the most up-to-date developments.",
       "parameters": {{
-        "query": "topic -site:source-to-avoid.com"
+        "dateRestrict": "m3",
+        "sort": "date"
       }}
     }},
     {{
       "search_id": "S_P5",
-      "query": "query using orTerms for keywords",
-      "rationale": "A search using alternative terms for the keywords to capture a wider range of documents.",
+      "query": "(\"synonym A\" OR \"synonym B\") \"key concept\" -site:unreliable.com",
+      "rationale": "A search using alternative terminology and explicitly avoiding identified unreliable sources to broaden coverage while maintaining quality.",
       "parameters": {{
-        "orTerms": "keyword_synonym1 keyword_synonym2"
+        "orTerms": "alternative_keyword1 alternative_keyword2"
       }}
     }}
   ]
