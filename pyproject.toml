@@ -13,4 +13,8 @@ dependencies = [
     "python-dotenv",
     "langchain",
     "langgraph",
+    "requests",
+    "pdfplumber",
+    "beautifulsoup4",
+    "html2text",
 ]

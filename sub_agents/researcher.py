@@ -2,8 +2,8 @@
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate
 from state import AgentState
-from db_utils import initialize_researcher, update_researcher_report, extract_and_clean_json
-import uuid
+from db_utils import initialize_researcher, update_researcher_report, extract_and_clean_json, get_document_object, update_document_object
+from tools import process_url
 from terminal_utils import print_colorful_break
 
 async def researcher_agent_node(state: AgentState):
@@ -52,12 +52,25 @@ async def researcher_agent_node(state: AgentState):
         logger.error(status)
         return {"status": status}
 
-    # Get the google_search tool
+    # Define Summarizer Agent
+    with open("prompts/summarizer_prompt.txt", "r") as f:
+        summarizer_prompt_template = f.read()
+    summarizer_prompt = ChatPromptTemplate.from_template(summarizer_prompt_template)
+    try:
+        summarizer_agent_runnable = create_openai_tools_agent(state['model'], [], summarizer_prompt)
+        summarizer_executor = AgentExecutor(agent=summarizer_agent_runnable, tools=[], verbose=True)
+    except Exception as e:
+        status = f"Failed to create summarizer agent executor: {e}"
+        logger.error(status)
+        return {"status": status}
+
+    # Get the tools
     google_search_tool = next((tool for tool in state['mcp_tools'] if tool.name == 'google_search'), None)
     if not google_search_tool:
         status = "google_search tool not found."
         logger.error(status)
         return {"status": status}
+    
 
     # Main control loop
     try:
@@ -100,7 +113,23 @@ async def researcher_agent_node(state: AgentState):
                             raw_search_results = await google_search_tool.arun(parameters)
                             search_results = extract_and_clean_json(raw_search_results)
 
-
+                            for i, result in enumerate(search_results):
+                                url = result.get('url')
+                                if url:
+                                    logger.info(f"Attempting document store initialzation for URL: {url}")
+                                    try:
+                                        url_id, url_status = await process_url(url, logger)                                        
+                                    except Exception as e:
+                                        status = f"Error processing URL {url}: {e}"
+                                        logger.error(status, exc_info=True)
+                                        continue                                    
+                                    search_results[i]['url_id'] = url_id
+                                    if url_status == "new":
+                                        status=f"New URL {url} added to the database with ID: {url_id}."
+                                    else:
+                                        status = f"URL {url} already exists in the database with ID: {url_id}."
+                                    logger.info(status)
+                                    
                             search_object = {
                                 "search_id": search_id,
                                 "rationale": rationale,
@@ -111,6 +140,7 @@ async def researcher_agent_node(state: AgentState):
                             
                             status = f"Search for gap {gap_id} finished for query: '{query}'"
                             logger.info(status)
+                            
                         except Exception as e:
                             status = f"Search for gap {gap_id}, query '{query}' failed: {e}"
                             logger.error(status)
@@ -123,8 +153,17 @@ async def researcher_agent_node(state: AgentState):
                     refiner_result = await refiner_executor.ainvoke({"input": refiner_input})
                     refiner_output = extract_and_clean_json(refiner_result.get("output", ""))
                     
-                    if refiner_output.get("status") == "insufficient":
-                        refined_searches = refiner_output.get("searches", [])
+                    status_check = ""
+                    if isinstance(refiner_output, dict):
+                        status_check = refiner_output.get("status", "").lower()
+                    elif isinstance(refiner_output, str):
+                        if "insufficient" in refiner_output.lower():
+                            status_check = "insufficient"
+
+                    if status_check == "insufficient":
+                        refined_searches = []
+                        if isinstance(refiner_output, dict):
+                            refined_searches = refiner_output.get("searches", [])
                         status = f"Refiner for gap {gap_id} returned {len(refined_searches)} new searches."
                         logger.info(status)
 
@@ -147,6 +186,22 @@ async def researcher_agent_node(state: AgentState):
                                 raw_search_results = await google_search_tool.arun(parameters)
                                 search_results = extract_and_clean_json(raw_search_results)
 
+                                for i, result in enumerate(search_results):
+                                    url = result.get('url')
+                                    if url:
+                                        logger.info(f"Attempting document store initialzation for URL: {url}")
+                                        try:
+                                            url_id, url_status = await process_url(url, logger)                                        
+                                        except Exception as e:
+                                            status = f"Error processing URL {url}: {e}"
+                                            logger.error(status, exc_info=True)
+                                            continue                                    
+                                        search_results[i]['url_id'] = url_id
+                                        if url_status == "new":
+                                            status=f"New URL {url} added to the database with ID: {url_id}."
+                                        else:
+                                            status = f"URL {url} already exists in the database with ID: {url_id}."
+                                        logger.info(status)
 
                                 search_object = {
                                     "search_id": search_id,
@@ -166,7 +221,42 @@ async def researcher_agent_node(state: AgentState):
                         status = f"Refiner for gap {gap_id} deemed results sufficient."
                         logger.info(status)
 
-                    # 5. Update Step
+                    # 5. Summarization Step
+                    status = f"Starting summarization for gap {gap_id}."
+                    logger.info(status)
+                    for search in all_searches_for_gap:
+                        for i, result in enumerate(search.get('results', [])):
+                            url = result.get('url')
+                            url_id = result.get('url_id')
+                            url_summary = get_document_object(url_id, type="summary")
+                            if url_summary:
+                                logger.info(f"Skipping summarization for url_id: {url_id}, summary already exists.")
+                                continue
+                            else:
+                                markdown_content = get_document_object(url_id, type="markdown_content")
+                                if not markdown_content or markdown_content.startswith("[MARKDOWN_GENERATION_FAILED"):
+                                    logger.info(f"Skipping summarization for url_id: {url_id}, no valid markdown content available.")
+                                    continue
+
+                                logger.info(f"Attempting summary for url_id: {url_id}")                               
+                                try:
+                                    summarizer_result = await summarizer_executor.ainvoke({"input": markdown_content})
+                                    summary_output = extract_and_clean_json(summarizer_result.get("output", ""))
+                                    
+                                    if isinstance(summary_output, dict):
+                                        summary = summary_output.get('summary')
+                                    else:
+                                        summary = str(summary_output)
+
+                                    update_document_object(url_id, type="summary", object=summary)
+                                    status = f"Successfully summarized and updated document for url_id: {url_id}"
+                                    logger.info(status)
+                                except Exception as e:
+                                    status = f"Error summarizing url_id {url_id}: {e}"
+                                    logger.error(status, exc_info=True)
+                                    continue
+
+                    # 6. Update Step
                     status = f"Preparing to update report for gap {gap_id} with {len(all_searches_for_gap)} searches."
                     logger.info(status)
                     try:

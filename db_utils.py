@@ -2,7 +2,6 @@
 import os
 import psycopg2
 import json
-from psycopg2.extras import Json
 from contextlib import contextmanager
 import json_repair
 
@@ -25,13 +24,86 @@ def create_tables():
         """CREATE TABLE IF NOT EXISTS curator_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
         """CREATE TABLE IF NOT EXISTS auditor_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
         """CREATE TABLE IF NOT EXISTS fixer_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
-        """CREATE TABLE IF NOT EXISTS advisor_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);"""
+        """CREATE TABLE IF NOT EXISTS advisor_reports (id SERIAL PRIMARY KEY, report_id VARCHAR(255) UNIQUE NOT NULL, report JSONB, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);""",
+        """CREATE TABLE IF NOT EXISTS documents (id SERIAL PRIMARY KEY, url TEXT UNIQUE NOT NULL, raw_document BYTEA, markdown_content TEXT, summary TEXT, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);"""
     )
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             for command in commands:
                 cur.execute(command)
         conn.commit()
+
+# --- Document Handling Functions ---
+def add_url_or_get_id(url: str) -> list:
+    """Adds a URL to the documents table if it doesn't exist, or returns the existing id."""
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM documents WHERE url = %s;", (url,))
+            result = cur.fetchone()
+            if result:
+                return result[0], "existing"
+            else:
+                cur.execute("INSERT INTO documents (url) VALUES (%s) RETURNING id;", (url,))
+                new_id = cur.fetchone()[0]
+                conn.commit()
+                return new_id, "new"
+
+def update_document_content(url_id: int, raw_document: bytes, markdown_content: str):
+    """Updates the raw_document and markdown_content for a given url_id."""
+    # Clean the markdown_content to remove any null characters
+    cleaned_markdown_content = markdown_content.replace('\x00', '')
+
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE documents SET raw_document = %s, markdown_content = %s WHERE id = %s;",
+                (raw_document, cleaned_markdown_content, url_id)
+            )
+            conn.commit()
+
+def get_document_object(url_id: int, type: str):
+    """Gets the object for a given url_id in the documents table."""
+    allowed_types = ["raw_document", "markdown_content", "summary"]
+    if type not in allowed_types:
+        raise ValueError(f"Invalid type specified: {type}")
+
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            query = f"SELECT {type} FROM documents WHERE id = %s;"
+            cur.execute(query, (url_id,))
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            else:
+                return None
+
+def update_document_object(url_id: int, type: str, object: str | bytes):
+    """Updates the object for a given url_id in the documents table."""
+    allowed_types = ["raw_document", "markdown_content", "summary"]
+    if type not in allowed_types:
+        raise ValueError(f"Invalid type specified: {type}")
+
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            query = f"UPDATE documents SET {type} = %s WHERE id = %s;"
+            cur.execute(query, (object, url_id))
+            conn.commit()
+
+def get_document(url_id: int) -> dict:
+    """Retrieves a document from the documents table."""
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT url, raw_document, markdown_content, summary FROM documents WHERE id = %s;", (url_id,))
+            result = cur.fetchone()
+            if result:
+                return {
+                    "url": result[0],
+                    "raw_document": result[1],
+                    "markdown_content": result[2],
+                    "summary": result[3]
+                }
+            else:
+                return None
 
 # --- Utility Functions ---
 
@@ -157,7 +229,7 @@ def initialize_curator(timestamp: str) -> dict:
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO curator_reports (report_id, report) VALUES (%s, %s);",
-                (report_json_string, report_id)
+                (report_id, report_json_string)
             )
         conn.commit()
         
@@ -208,4 +280,3 @@ def load_latest_report(report_type: str) -> str:
                 return json.dumps(result[0])
             else:
                 raise FileNotFoundError(f"No reports found in table {table_name}")
-            
