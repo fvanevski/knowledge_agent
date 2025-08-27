@@ -1,4 +1,5 @@
 # utils.py
+import tiktoken
 
 def format_bytes(byte_count):
     """
@@ -24,3 +25,19 @@ def format_bytes(byte_count):
         # Format as Megabytes for 1 MB or more
         mb_value = round(byte_count / (1024 * 1024))
         return f"{mb_value:,} MB"
+
+def filter_content_for_summarization(content: str) -> str:
+    """Truncates content to a safe number of tokens for the summarization model."""
+    MAX_TOKENS = 16384  # Cap content for summarization at 16k tokens for efficiency
+    try:
+        encoding = tiktoken.get_encoding("cl100k_base")
+        tokens = encoding.encode(content)
+        if len(tokens) > MAX_TOKENS:
+            truncated_tokens = tokens[:MAX_TOKENS]
+            return encoding.decode(truncated_tokens)
+        else:
+            return content
+    except Exception as e:
+        # Fallback to simple character truncation if tokenization fails
+        print(f"Token-based filtering failed: {e}. Falling back to character-based truncation.")
+        return content[:MAX_TOKENS * 4] # Rough approximation

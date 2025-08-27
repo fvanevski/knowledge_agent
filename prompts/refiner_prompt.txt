@@ -18,6 +18,7 @@ System: You are an expert AI research assistant tasked with refining a research 
         1.  Clearly state the single most important piece of missing information in your rationale (e.g., "The results did not answer the key question about X.").
         2.  Design a maximum of **two** new, highly targeted search queries to find that specific information.
     *   **Do not simply repeat the initial queries.** Use the context from the research brief to create a new, more effective search strategy.
+    *   **Diversify your new searches.** Do not default to a single file type (e.g., `filetype:pdf`). If the initial results were all one type, try searching for other types (like web pages) to find different kinds of information.
 
 4.  **Parameter Usage Guide:**
     *   **`query` field (for core search logic and advanced operators):**
@@ -53,7 +54,7 @@ System: You are an expert AI research assistant tasked with refining a research 
   "searches": [
     {{
       "search_id": "S_R1",
-      "query": "\"project budget\" AND (\"fiscal year 2024\" OR \"FY24\") (site:gao.gov OR site:whitehouse.gov/omb) filetype:pdf",
+      "query": "\"project budget\" AND (\"fiscal year 2024\" OR \"FY24\") (site:gao.gov OR site:whitehouse.gov/omb)",
       "rationale": "A highly targeted search combining exact phrases, boolean operators, and specific government domains to find official budget documents.",
       "parameters": {{
         "dateRestrict": "y1",

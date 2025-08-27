@@ -4,6 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from state import AgentState
 from db_utils import initialize_researcher, update_researcher_report, extract_and_clean_json, get_document_object, update_document_object
 from tools import process_url
+from utils import filter_content_for_summarization
 from terminal_utils import print_colorful_break
 
 async def researcher_agent_node(state: AgentState):
@@ -240,7 +241,8 @@ async def researcher_agent_node(state: AgentState):
 
                                 logger.info(f"Attempting summary for url_id: {url_id}")                               
                                 try:
-                                    summarizer_result = await summarizer_executor.ainvoke({"input": markdown_content})
+                                    filtered_content = filter_content_for_summarization(markdown_content)
+                                    summarizer_result = await summarizer_executor.ainvoke({"input": filtered_content})
                                     summary_output = extract_and_clean_json(summarizer_result.get("output", ""))
                                     
                                     if isinstance(summary_output, dict):

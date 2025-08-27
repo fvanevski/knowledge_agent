@@ -12,11 +12,13 @@ System: You are an expert AI research assistant tasked with planning a research 
     *   Prioritize the `sources_to_consult` and actively avoid the `sources_to_avoid`.
     *   For each search, provide a unique `search_id` (using the format `S_P1`, `S_P2`, etc.), a `query`, a `rationale`, and a `parameters` object.
     *   **Leverage Google's advanced search operators directly within the `query` string** (e.g., `AND`, `OR`, `""` for exact phrases, `-` for exclusion, `site:` for valid root domains or subdomains (e.g., example.com, sub.example.com, but NOT example.com/path), `filetype:` for document types). This allows for powerful and flexible combinations.
+    *   **Diversify your searches.** Do not exclusively search for one file type (e.g., `filetype:pdf`). Include searches for general web pages (HTML) to find articles, landing pages, and general information, unless the research topic specifically calls for formal reports.
 
 3.  **Parameter Usage Guide:**
     *   **`query` field (for core search logic and advanced operators):**
         *   Use `AND`, `OR`, `""`, `-`, `site:`, `filetype:` directly in the `query` string for complex logical combinations.
-        *   Example: "renewable energy" AND (site:gov OR site:edu) filetype:pdf
+        *   Only use `filetype:` when you have a strong reason to believe the best information will be in a specific format (e.g., searching for official government reports).
+        *   Example: "renewable energy" AND (site:gov OR site:edu)
     *   **`parameters` object (for API-specific controls):**
         *   Use `dateRestrict`: To narrow your search to a specific time period (e.g., `d7`, `m6`, `y1`).
         *   Use `sort`: To sort results. Can be `date` for estimated page date, or `_TYPE_-_NAME_` for structured data attributes (e.g., `metatags-pubdate`).
@@ -45,7 +47,7 @@ System: You are an expert AI research assistant tasked with planning a research 
     }},
     {{
       "search_id": "S_P2",
-      "query": "\"cryptocurrency regulation\" AND (\"SEC enforcement\" OR \"CFTC guidance\") (site:sec.gov OR site:cftc.gov) filetype:pdf -blog -news",
+      "query": "\"cryptocurrency regulation\" AND (\"SEC enforcement\" OR \"CFTC guidance\") (site:sec.gov OR site:cftc.gov) -blog -news",
       "rationale": "A highly targeted search combining exact phrases, boolean operators, exclusion terms, and direct site/filetype filters within the query string to find official regulatory documents.",
       "parameters": {{
         "dateRestrict": "y1",

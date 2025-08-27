@@ -30,7 +30,7 @@ The Knowledge Agent is designed to solve the challenges of maintaining a static 
 - **High Maintenance Overhead:** The manual effort required to find new sources, ingest them, and fix data quality issues is significant and does not scale.
 - **Data Quality Degradation:** As more data is added, inconsistencies and duplicates can accumulate, reducing the reliability of RAG outputs and polluting the knowledge graph.
 
-The agent now features **advanced search and contextual ranking capabilities**, allowing it to perform more targeted and effective research, leading to higher quality information being added to the knowledge base.
+The agent now features a **robust document processing pipeline** that can fetch raw web content (including PDFs and HTML), generate clean markdown, and store it in a structured database for further analysis and summarization.
 
 ## Architecture
 
@@ -66,14 +66,19 @@ The Knowledge Agent uses a multi-agent architecture, where a primary **Orchestra
 - **[psycopg2-binary](https://pypi.org/project/psycopg2-binary/)**: Used for connecting to the PostgreSQL database.
 - **[python-dotenv](https://pypi.org/project/python-dotenv/)**: Used for managing environment variables.
 - **[json-repair](https://pypi.org/project/json-repair/)**: Used for repairing malformed JSON.
+- **[requests](https://pypi.org/project/requests/)**: Used for making HTTP requests to download web content.
+- **[pdfplumber](https://pypi.org/project/pdfplumber/)**: Used for extracting text from PDF documents.
+- **[beautifulsoup4](https://pypi.org/project/beautifulsoup4/)**: Used for parsing HTML content.
+- **[html2text](https://pypi.org/project/html2text/)**: Used for converting HTML to markdown.
 
 ### Agent Roles
 
 - **Analyst**: Identifies knowledge gaps and stale information in the knowledge base by analyzing its content and structure.
-- **Researcher**: Acts as the primary research arm of the agent. It breaks down research tasks into two sub-roles:
+- **Researcher**: Acts as the primary research arm of the agent. It breaks down research tasks and manages the entire content acquisition pipeline:
     - **Planner**: Creates a strategic search plan using advanced search operators to target information effectively.
+    - **Content Processor**: Fetches raw documents (PDF, HTML, etc.), processes them into clean markdown, and stores both the raw and processed versions in the database.
     - **Refiner**: If the initial search plan is unsuccessful, the refiner adjusts the strategy to find the missing information.
-- **Curator**: Reviews the sources found by the Researcher, evaluates them for relevance, quality, and novelty, and ingests the approved ones into LightRAG.
+    - **Summarizer**: Generates a concise summary from the clean markdown content.
 - **Auditor**: Scans the knowledge graph for data quality issues like duplicate entities, inconsistent naming, and messy relationships.
 - **Fixer**: Corrects the data quality issues identified by the Auditor, with a human approval step for destructive operations.
 - **Advisor**: Analyzes recurring error patterns and suggests improvements to the LightRAG system's configuration to prevent future issues.
@@ -129,12 +134,6 @@ The Knowledge Agent is executed via the `run.py` script. You can specify differe
     uv run python run.py --research
     ```
 
-- **Curate (`--curate`)**: Ingests new information into the knowledge base.
-
-    ```sh
-    uv run python run.py --curate
-    ```
-
 - **Audit (`--audit`)**: Reviews the knowledge base for data quality issues.
 
     ```sh
@@ -171,11 +170,6 @@ The Knowledge Agent requires a `mcp.json` file in the root directory to configur
         "cwd": "/workspace/mcp_servers/lightrag_mcp",
         "transport": "stdio"
     },
-    "fetch": {
-        "command": "uvx",
-        "args": ["mcp-server-fetch"],
-        "transport": "stdio"
-    },
     "file_tools": {
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace/knowledge_agent", "/workspace/LightRAG"],
@@ -195,8 +189,7 @@ The behavior of each sub-agent is guided by a system prompt located in the `prom
 - **`analyst_prompt.txt`**: Guides the Analyst in identifying knowledge gaps.
 - **`planner_prompt.txt`**: Guides the Researcher's Planner in creating a search strategy.
 - **`refiner_prompt.txt`**: Guides the Researcher's Refiner in adjusting the search strategy.
-- **`search_ranker_prompt.txt`**: Guides the Curator in ranking search results.
-- **`ingester_prompt.txt`**: Guides the Curator in ingesting documents into LightRAG.
+- **`summarizer_prompt.txt`**: Guides the Researcher's Summarizer in creating a concise summary.
 - **`auditor_prompt.txt`**: Guides the Auditor in identifying data quality issues.
 - **`fixer_prompt.txt`**: Guides the Fixer in correcting data quality issues.
 - **`advisor_prompt.txt`**: Guides the Advisor in providing recommendations.
@@ -207,9 +200,9 @@ The agent's operations are logged to a file in the `logs/` directory. The logs a
 
 ## Database
 
-The Knowledge Agent uses a PostgreSQL database to store the reports generated by the sub-agents. The `db_utils.py` file contains the functions for creating the tables and interacting with the database.
+The Knowledge Agent uses a PostgreSQL database to store the reports generated by the sub-agents and to cache processed web content. The `db_utils.py` file contains the functions for creating the tables and interacting with the database.
 
-The database schema consists of a table for each agent's reports:
+The database schema consists of tables for each agent's reports and a central `documents` table:
 
 - `analyst_reports`
 - `researcher_reports`
@@ -217,26 +210,27 @@ The database schema consists of a table for each agent's reports:
 - `auditor_reports`
 - `fixer_reports`
 - `advisor_reports`
+- `documents`
 
-Each table has the following columns:
+The `documents` table stores processed web content and has the following structure:
 
 - `id`: Primary key (integer)
-- `report_id`: A unique identifier for the report (text)
-- `report`: A JSONB column containing the report data
-- `created_at`: Timestamp of when the report was created
+- `url`: The unique URL of the source document (text)
+- `raw_document`: The raw binary content of the document (BYTEA)
+- `markdown_content`: The processed, clean markdown version of the content (text)
+- `summary`: A concise summary of the document (text)
+- `created_at`: Timestamp of when the document was first added
 
 ## Workflow Details
 
 The `maintenance` workflow is the most comprehensive, executing the full lifecycle of knowledge management. Here is a step-by-step breakdown of the process:
 
 1.  **Analysis**: The **Analyst** examines the knowledge base to identify areas that are outdated or incomplete. It generates a report detailing these knowledge gaps.
-2.  **Research**: The **Researcher** takes the Analyst's report and creates a research plan.
+2.  **Research**: The **Researcher** takes the Analyst's report and executes the entire content acquisition pipeline:
     - The **Planner** develops a set of targeted search queries using advanced search operators.
-    - The agent executes these searches and gathers the results.
+    - The agent executes these searches and for each resulting URL, it downloads the raw content, processes it into clean markdown, and generates a summary.
+    - All artifacts (raw document, markdown, and summary) are stored in the `documents` table in the database.
     - If the initial searches are insufficient, the **Refiner** adjusts the plan and tries again.
-3.  **Curation**: The **Curator** receives the search results from the Researcher.
-    - It ranks the URLs based on relevance, authority, quality, and novelty.
-    - It ingests the content from the approved URLs into the LightRAG knowledge base.
-4.  **Audit**: The **Auditor** scans the knowledge graph for inconsistencies, duplicates, and other data quality issues, producing a report of its findings.
-5.  **Fix**: The **Fixer** takes the Auditor's report and attempts to correct the identified issues. For any destructive changes (e.g., deleting an entity), it will require human approval.
-6.  **Advise**: Finally, the **Advisor** analyzes the reports from all the other agents, identifies recurring problems, and suggests systemic improvements to the LightRAG configuration or the agent's own processes.
+3.  **Audit**: The **Auditor** scans the knowledge graph for inconsistencies, duplicates, and other data quality issues, producing a report of its findings.
+4.  **Fix**: The **Fixer** takes the Auditor's report and attempts to correct the identified issues. For any destructive changes (e.g., deleting an entity), it will require human approval.
+5.  **Advise**: Finally, the **Advisor** analyzes the reports from all the other agents, identifies recurring problems, and suggests systemic improvements to the LightRAG configuration or the agent's own processes.
