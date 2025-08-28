@@ -36,7 +36,7 @@ The agent now features a **robust document processing pipeline** that can fetch 
 
 The Knowledge Agent uses a multi-agent architecture, where a primary **Orchestrator Agent** manages the overall workflow by delegating tasks to a team of specialized sub-agents.
 
-```
+```text
 +---------------------+
 | Orchestrator Agent  |
 +----------+----------+
