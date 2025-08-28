@@ -209,6 +209,7 @@ __marimo__/
 # trace/log files
 trace*
 verbose_log*
+terminal_output*
 logs/
 
 # Gemini code assist
