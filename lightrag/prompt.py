@@ -1,15 +1,97 @@
 from __future__ import annotations
+import json
 from typing import Any
 
 PROMPTS: dict[str, Any] = {}
 
 # --- DEPRECATED DELIMITERS ---
-# These are no longer used with the JSON output format but are kept for reference.
+# Kept for reference for any old cached items that might be reprocessed.
 # PROMPTS["DEFAULT_TUPLE_DELIMITER"] = "<|>"
 # PROMPTS["DEFAULT_RECORD_DELIMITER"] = "##"
 # PROMPTS["DEFAULT_COMPLETION_DELIMITER"] = "<|COMPLETE|>"
 
 PROMPTS["DEFAULT_USER_PROMPT"] = "n/a"
+
+# --- JSON Schema for Entity Definitions ---
+# Structuring the definitions as a dictionary makes them easy to manage and convert to a JSON string.
+PROMPTS["ENTITY_DEFINITIONS"] = {
+    "organization/institution": {
+        "description": "A named corporate, governmental, or non-profit entity.",
+        "examples": ["The Heritage Foundation", "U.S. Supreme Court", "U.S. Department of Agriculture (USDA)"]
+    },
+    "person": {
+        "description": "A specific, named individual.",
+        "examples": ["Elon Musk", "Earl Warren"]
+    },
+    "location/geo": {
+        "description": "A specific geographical place.",
+        "examples": ["United States", "California", "Texas"]
+    },
+    "event": {
+        "description": "A specific, named occurrence at a point in time.",
+        "examples": ["October 7, 2023 Hamas Attack", "2024 G7 Summit"]
+    },
+    "policy/proposal": {
+        "description": "A specific policy, proposal, or named formal plan originating from a person or organization.",
+        "examples": ["Tariff Policy", "Police Militarization Plan", "In-State Tuition Policy"]
+    },
+    "law/regulation": {
+        "description": "A named law or regulation.",
+        "examples": ["California Indian Child Welfare Act", "Personal Responsibility and Work Opportunity Reconciliation Act of 1996"]
+    },
+    "tax/fiscal_instrument": {
+        "description": "A specific tax, fee, or financial mechanism for revenue or distribution.",
+        "examples": ["Sales and Excise Taxes", "Property Taxes", "Payroll Deductions"]
+    },
+    "narrative": {
+        "description": "A specific, socially constructed story (not objective facts) used to shape public perception, justify social policy, and influence behavior by defining a social group, issue, or event.",
+        "examples": ["Welfare Queen", "Climate Hoax", "Meritocracy"]
+    },
+    "misinformation/disinformation": {
+        "description": "False or inaccurate information, such as fabricated content, manipulated content, imposter content, false context, and unsupported conspiracy theories.",
+        "examples": ["Pizzagate", "Birtherism", "Plandemic", "Altered Pelosi Video"]
+    },
+    "digital_asset": {
+        "description": "A specific digital item or platform.",
+        "examples": ["X (formerly Twitter)", "$TRUMP Memecoin"]
+    },
+    "concept/idea": {
+        "description": "An abstract idea, theory, or social construct.",
+        "examples": ["Free Speech Absolutism", "Racial Segregation", "Unreimbursed Hospital Costs"]
+    },
+    "metric/score": {
+        "description": "A specific, quantifiable measure or statistic, often including numbers and units.",
+        "examples": ["Freedom on the Net Score", "$89.8 billion", "11,862 hate crime incidents"]
+    },
+    "publication/article": {
+        "description": "A named report, book, or article.",
+        "examples": ["Mandate for Leadership", "State Report on Undocumented Immigrant Hospital Costs"]
+    },
+    "political_group": {
+        "description": "A group defined by political affiliation or ideology, not a formal organization.",
+        "examples": ["White Supremacist Groups"]
+    },
+    "scenario/situation": {
+        "description": "A described situation or context without a formal name.",
+        "examples": ["Wealth dynamics between households"]
+    },
+    "demographic/population": {
+        "description": "A group of people defined by shared characteristics.",
+        "examples": ["Black Americans", "LGBTQ+ Individuals", "Undocumented Residents"]
+    },
+    "publisher/outlet": {
+        "description": "A named publisher or media outlet.",
+        "examples": ["The Washington Post", "The Texas Tribune", "Journal of Law"]
+    },
+    "time_period/era": {
+        "description": "A specific period of time.",
+        "examples": ["2025", "2020–2024", "The Civil Rights Era"]
+    }
+}
+
+# Convert the dictionary to a formatted JSON string to be inserted into the prompt
+PROMPTS["ENTITY_DEFINITIONS_JSON"] = json.dumps(PROMPTS["ENTITY_DEFINITIONS"], indent=2)
+
 
 PROMPTS["entity_extraction"] = """---Goal---
 From the text snippet provided, extract key entities and their relationships. The text is a small chunk of a larger document. Identify both direct and implicit relationships (e.g., causal links, memberships, hierarchies) when the connection is clear from the context.
@@ -18,32 +100,20 @@ From the text snippet provided, extract key entities and their relationships. Th
 Your output MUST be a single, valid JSON object and nothing else. Do not include any explanatory text, markdown code fences (like ```json), or any other text before or after the JSON. The JSON object will contain two keys: "entities" and "relationships".
 
 ---Entity Definitions---
-Extract entities that belong to one of the following types. Use these definitions to guide your classification:
-- **organization/institution**: A named corporate, governmental, or non-profit entity (e.g., "The Heritage Foundation", "U.S. Supreme Court").
-- **person**: A specific, named individual (e.g., "Elon Musk", "Earl Warren").
-- **location/geo**: A specific geographical place (e.g., "United States", "California").
-- **event**: A specific, named occurrence at a point in time (e.g., "October 7, 2023 Hamas Attack", "2024 G7 Summit").
-- **policy**: A named law, regulation, executive order, or formal plan (e.g., "Schedule F", "Project 2025").
-- **digital_asset**: A specific digital item or platform (e.g., "X (formerly Twitter)", "$TRUMP Memecoin").
-- **concept/idea**: An abstract idea, theory, or social construct (e.g., "Free Speech Absolutism", "Racial Segregation").
-- **metric/score**: A specific, quantifiable measure or statistic (e.g., "Freedom on the Net Score", "11,862 hate crime incidents").
-- **publication/article**: A named report, book, or article (e.g., "Mandate for Leadership").
-- **political_group**: A group defined by political affiliation or ideology, not a formal organization (e.g., "White Supremacist Groups").
-- **scenario/situation**: A described situation or context without a formal name (e.g., "Wealth dynamics between households").
-- **demographic/population**: A group of people defined by shared characteristics (e.g., "Black Americans", "LGBTQ+ Individuals").
-- **publisher/outlet**: A named publisher or media outlet (e.g., "The Washington Post", "The Oxford Eagle", "Journal of Law").
-- **time_period/era**: A specific period of time (e.g., "2025", "2020–2024", "The Civil Rights Era").
+Extract entities that belong to one of the types defined in the following JSON object. Use these definitions and examples to guide your classification. The `type` you assign in your output must be one of the keys from this JSON object.
+```json
+{entity_definitions_json}
+```
 
 ---Relationship Definitions---
 For each relationship, select the most appropriate `relationship_type` from this fixed list:
-[TARGETS, EVALUATES, PRODUCES, CAUSES, IS_A, IS_PART_OF, IS_LOCATED_IN, INFLUENCES, PUBLISHED_BY, LED_BY, CRITICIZES, SUPPORTS, USES, INVOLVES]
+[TARGETS, EVALUATES, PRODUCES, CAUSES, IS_A, IS_PART_OF, IS_LOCATED_IN, INFLUENCES, PUBLISHED_BY, LED_BY, CRITICIZES, SUPPORTS, USES, INVOLVES, ESTIMATES, AFFIRMED_BY, PAYS_INTO, REIMBURSES]
 
 ---Instructions & Rules---
 1.  **Entities**:
     * `name`: Standardize the name. Use the full, formal name (e.g., "American Civil Liberties Union" instead of "ACLU"). Use Title Case.
-    * `type`: Assign one of the specified entity types, using the exact lowercase format provided (e.g., "organization/institution").
+    * `type`: Assign one of the specified entity types, using the exact lowercase format from the keys in the Entity Definitions JSON.
     * `description`: Briefly describe the entity using only information from the text. If no description is available, state "Not specified in text."
-    * **Fallback Rule**: If an entity does not clearly fit any type, classify it as `concept/idea`. Do not use `UNKNOWN`.
 
 2.  **Relationships**:
     * `source` / `target`: Use the standardized entity names.
@@ -51,7 +121,9 @@ For each relationship, select the most appropriate `relationship_type` from this
     * `type`: Choose exactly one type from the predefined list above.
     * `strength`: Score from 1-10 indicating how explicit the relationship is (1=implied, 10=directly stated).
 
-3.  **CRITICAL RULE**: Your output must be a clean, valid JSON object. Do not include any non-JSON text, comments, or markdown formatting.
+3.  **CRITICAL RULES**:
+    * Your output must be a clean, valid JSON object. Do not include any non-JSON text, comments, or markdown formatting.
+    * You are strictly forbidden from using 'UNKNOWN' as an entity type. If an entity does not clearly fit any defined type, you MUST classify it as `concept/idea`.
 
 ---Examples---
 {examples}
@@ -76,7 +148,7 @@ Output:
   "entities": [
     {
       "name": "Project 2025",
-      "type": "policy",
+      "type": "policy/proposal",
       "description": "An initiative proposing major changes to the federal government, led by the Heritage Foundation."
     },
     {
@@ -86,7 +158,7 @@ Output:
     },
     {
       "name": "Schedule F",
-      "type": "policy",
+      "type": "policy/proposal",
       "description": "An executive order designed to remove job protections from federal employees, proposed as part of Project 2025."
     },
     {
@@ -206,6 +278,50 @@ Output:
       "description": "The $TRUMP memecoin was increasingly promoted on the X platform following the acquisition.",
       "type": "INVOLVES",
       "strength": 7
+    }
+  ]
+}
+""",
+    """------Example 3------
+
+Text:
+```
+Estimates from the Institute on Taxation and Economic Policy (ITEP) indicate that undocumented immigrants paid nearly $97 billion in federal, state, and local taxes in 2022. This figure includes over $54 billion in payments to the federal government.
+```
+
+Output:
+{
+  "entities": [
+    {
+      "name": "Institute on Taxation and Economic Policy",
+      "type": "organization/institution",
+      "description": "An organization that provides estimates on tax contributions from undocumented immigrants."
+    },
+    {
+      "name": "$97 Billion",
+      "type": "metric/score",
+      "description": "The estimated total tax contribution from undocumented immigrants in 2022."
+    },
+    {
+      "name": "Undocumented Immigrants",
+      "type": "demographic/population",
+      "description": "The population group whose tax contributions were estimated."
+    }
+  ],
+  "relationships": [
+    {
+      "source": "Institute on Taxation and Economic Policy",
+      "target": "$97 Billion",
+      "description": "The Institute on Taxation and Economic Policy (ITEP) estimated the total tax contribution to be nearly $97 billion.",
+      "type": "ESTIMATES",
+      "strength": 10
+    },
+    {
+      "source": "Undocumented Immigrants",
+      "target": "$97 Billion",
+      "description": "Undocumented immigrants were estimated to have paid nearly $97 billion in taxes.",
+      "type": "PAYS_INTO",
+      "strength": 9
     }
   ]
 }

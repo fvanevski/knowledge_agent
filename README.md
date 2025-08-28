@@ -82,7 +82,7 @@ The Knowledge Agent uses a multi-agent architecture, where a primary **Orchestra
   - **Content Processor**: Uses a hybrid strategy to extract clean, reader-mode content. It first tries the fast and accurate `trafilatura` library, and if that fails to return quality content, it falls back to a full browser rendering with `Playwright` to handle complex, JavaScript-heavy sites.
   - **Refiner**: If the initial search plan is unsuccessful, the refiner adjusts the strategy to find the missing information.
   - **Summarizer**: Generates a concise summary from the clean markdown content. Before summarizing, the content is passed through a filter that truncates it to a safe token limit (16k) to ensure efficiency and prevent context window errors.
-- **Curator**: Takes the URLs from the Researcher and decides which ones to ingest into the knowledge base.
+- **Curator**: Takes the URLs from the Researcher and decides which ones are relevant, then carries out ingestion of approved content into the knowledge base.
 - **Auditor**: Scans the knowledge graph for data quality issues like duplicate entities, inconsistent naming, and messy relationships.
 - **Fixer**: Corrects the data quality issues identified by the Auditor, with a human approval step for destructive operations.
 - **Advisor**: Analyzes recurring error patterns and suggests improvements to the LightRAG system's configuration to prevent future issues.
@@ -144,7 +144,7 @@ The Knowledge Agent is executed via the `run.py` script. You can specify differe
     uv run python run.py --research
     ```
 
-- **Curate (`--curate`)**: Ingests new sources into the knowledge base.
+- **Curate (`--curate`)**: Ranks search results and ingests approved new content into the knowledge base.
 
     ```sh
     uv run python run.py --curate
@@ -206,7 +206,8 @@ The behavior of each sub-agent is guided by a system prompt located in the `prom
 - **`planner_prompt.txt`**: Guides the Researcher's Planner in creating a search strategy.
 - **`refiner_prompt.txt`**: Guides the Researcher's Refiner in adjusting the search strategy.
 - **`summarizer_prompt.txt`**: Guides the Researcher's Summarizer in creating a concise summary.
-- **`curator_prompt.txt`**: Guides the Curator in ingesting new sources.
+- **`search_ranker_prompt.txt`**: Guides the Curator in ranking search results for ingestion.
+- **`ingester_prompt.txt`**: Guides the Curator in ingesting new sources.
 - **`auditor_prompt.txt`**: Guides the Auditor in identifying data quality issues.
 - **`fixer_prompt.txt`**: Guides the Fixer in correcting data quality issues.
 - **`advisor_prompt.txt`**: Guides the Advisor in providing recommendations.
@@ -248,7 +249,7 @@ The `maintenance` workflow is the most comprehensive, executing the full lifecyc
     - The agent executes these searches. For each resulting URL, it uses the **hybrid content processor** (Trafilatura with a Playwright fallback) to extract clean, main content and generate high-quality markdown.
     - All artifacts (raw document, markdown, and summary) are stored in the `documents` table in the database.
     - If the initial searches are insufficient, the **Refiner** adjusts the plan and tries again.
-3. **Curation**: The **Curator** takes the URLs from the Researcher and decides which ones to ingest into the knowledge base.
+3. **Curation**: The **Curator** ranks the URLs from the Researcher and decides which ones to ingest into the knowledge base, and then proceeds to ingest approved content.
 4. **Audit**: The **Auditor** scans the knowledge graph for inconsistencies, duplicates, and other data quality issues, producing a report of its findings.
 5. **Fix**: The **Fixer** takes the Auditor's report and attempts to correct the identified issues. For any destructive changes (e.g., deleting an entity), it will require human approval.
 6. **Advise**: Finally, the **Advisor** analyzes the reports from all the other agents, identifies recurring problems, and suggests systemic improvements to the LightRAG configuration or the agent's own processes.
